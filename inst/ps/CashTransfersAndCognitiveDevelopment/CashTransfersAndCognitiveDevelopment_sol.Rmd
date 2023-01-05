@@ -1,0 +1,1446 @@
+#< ignore
+
+```{r setup}
+library(RTutor)
+# Adapt the working directory below and then run setup chunk in RStudio.
+#setwd("D:/libraries/RTutor/examples")
+setwd("C:/Users/Luis/OneDrive/Dokumente/R/win-library/4.0/RTutor/examples")
+ps.name = "CashTransfersAndCognitiveDevelopment"; sol.file = paste0(ps.name,"_sol.Rmd")
+libs = c("ggplot2", "haven", "tidyverse", "DiagrammeR", "estimatr", "texreg", "RCT", "kableExtra", "systemfit") # character vector of all packages you load in the problem set
+
+#name.rmd.chunks(sol.file)
+create.ps(sol.file=sol.file, ps.name=ps.name, libs=libs,addons = "quiz", extra.code.file = "functions.R")
+          
+# The following line directly shows the problem set 
+# in the browser
+show.ps(ps.name,launch.browser=TRUE,
+  auto.save.code=FALSE,sample.solution=FALSE)
+```
+#>
+
+
+## Exercise Overview
+
+Welcome to the interactive RTutor problem set which is part of my bachelor thesis at Ulm University. It is based on the paper *Cash Transfers, Behavioral Changes, and Cognitive Development in Early Childhood: Evidence from a Randomized Experiment* from Karen Macours, Norbert Schady and Renos Vakis, which was published in the “American Economic Journal: Applied Economics” (4(2): 247–273) in 2012. The article can be downloaded <a href="https://www.aeaweb.org/articles?id=10.1257/app.4.2.247" target="_blank">here</a>.
+
+### Content
+
+The cognitive development in early childhood has proven to be an important predictor of a child’s future success. In developed countries it has an influence on its school achievement and later wages (Currie and Thomas, 2001; Case and Paxson, 2008). There are multiple possible influences on the early childhood cognitive development. One potential factor is the wealth of the household the child is living in. From November 2005 until December 2006, the Ministry of the family in Nicaragua (MIFAMILIA) implemented the Atención a Crisis pilot program in 6 municipalities in the poor and rural area of the country. The program contained cash transfers to randomly chosen households. The children were also subjected to a variety of tests during and after the experiment to determine their cognitive development.
+
+In the following RTutor Problem set, we will use the results of the Atención a Crisis pilot program to empirically analyse the impact of cash transfers on early childhood cognitive development. We will therefore start with some general analysis and explanation of the dataset. Thereby we will also dig deeper in the procedure and methodology of the program. Next, we will explore the randomization method, which is used to estimate causal effects. Among an introduction to this method, we will analyse whether randomization was carried out successfully in this program. Then we come to the main part of the analysis. Via regressions we will try to see if the cash transfers had an over all significant influence on the cognitive development. After that, we will subject these results to a few robustness checks. Since There are many ways in which cash transfers can influence cognitive development (e.g. more spending on healthy food, parents having more time to read to the child, etc.), in the last step, we will try to find out if it is really the income effect of the cash transfers alone, which explains the estimated effects.
+
+### Content  
+
+The problem set has the following structure:
+
+**Exercise 1: Descriptive Overview**
+
+1.1 Overview of the Dataset
+
+1.2 Graphical Analysis
+
+**Exercise 2: Randomization and Causality**
+
+2.1 Randomization in the Program
+
+2.2 Randomization Check
+
+**Exercise 3: Program Effects on Child Development**
+
+3.1 Robustness Checks
+
+3.2 Disaggregated Effects by Treatment Package
+
+**Exercise 4:	Conclusion**
+
+**5: Appendix**
+
+**6: References**
+
+You don't have to solve the exercises in the given order but it is recommended to do so since later exercises expect earlier received knowledge from you.
+
+Within one tab you need to solve the tasks in the given order. When you begin a new tab, click *edit* to start the first exercise. Then you can enter your code.  To check your solution and run the code press *check*. If you don't know how to start or your checked solution is not correct, you can press *hint* for advice. As well you have the possibility to just press *solution* for the sample solution. To test your knowledge acquired by solving the problem set, some quizzes are included and you can earn awards.
+
+Have fun at solving the tasks and at collecting awards.
+
+## Exercise 1 Descriptive Overview
+
+As said in the introduction, first, I will give you an overview and explanation of the dataset. We will therefore start with some general analysis of the dataset in exercise 1.1 and will go on with some graphical analysis in exercise 1.2.
+
+Just click on *"Go to next exercise..."* in the bottom left to go to exercise 1.1 and start the analysis of the dataset. (You can also always switch between the exercises using the menu displayed at the top)
+
+## Exercise 1.1 Overview of the Dataset
+
+The main data frame used in this problemset is called `cashtransfers.dta`.
+
+Before we can work with the data, we have to load it.
+Use the `read_dta()` command from the *haven* package to load the `cashtransfers.dta` file and assign it to the variable `dat`.
+
+```{r "1_1"}
+#< hint
+#>
+#< task
+library(haven)
+# Load "cashtransfers.dta" into the variable dat. Enter your code here:
+
+#>
+dat <- read_dta("cashtransfers.dta")
+```
+
+After loading the data into `dat`, we can now take a closer look at its structure. An easy way to get familiar with the variables of a data frame is the basic R-command `head()`. It shows the first part of the data.
+
+Use the `head()` command to show the first six rows of the data frame `dat`.
+
+```{r "1_2"}
+#< task
+# Use head() to have a look at dat. Enter your code here:
+
+#>
+#< hint
+display("Just put our dataframe 'dat' in the brackets of head()")
+#>
+head(dat)
+```
+
+As you can see, the dataset has many variables and can easily be confusing. To be exact, there are 198 of them. But don't worry, I will explain all the variables that are important for the analysis at the appropriate time.
+
+First, we should note that one entry of the dataset (i.e. one row) corresponds to one child. The variable `TREAT` is a dummy variable which is 1 if the child was 'treated'. That means the child lives in a household which received cash transfers through the program. The program contained monthly cash transfers between November 2005 and December 2006, which were paid to the primary child caregiver of the household (also known as 'titular'). Throughout the program, the caregivers were also exposed to repeated information and communication efforts by program staff. These stressed the importance of varied diets, health, and education, and were meant to change household investment and consumption patterns and behavior.
+
+You also probably noticed that a lot of variables have the ending '_05', '_06' or '_08'. This is because the program had data collection through surveys at three points in time:
+
+- The baseline data were collected in April-May 2005, which is **before** the program had started. The variables with '**_05**' as an ending refer to this date.
+- The next data collection took place in July-August 2006, which is nine months after the households had started receiving payments. Since the program was taking place for about one year in total, one could say it is **at the end of the program**. The variables with '**_06**' as an ending refer to this date.
+- The last collection was between August 2008 and May 2009. Households stopped receiving payments for an average of two years at this point. Therefore this is **after** the program and variables with '**_08**' as an ending refer to this date. (Macours et al., 2012b)
+
+Before we move on to further explanations, just answer this short quiz:
+
+Do you agree with the following statement about the program structure?
+
+*"The last data collection two years after the program is unnecessary because the effects of the program should already be visible in the second data collection nine months after the start of the program."*
+
+#< quiz "fadeout"
+question: Just pick a answer!
+sc:
+    - yes
+    - no*
+success: Good intuition! By also collecting data after the program, so-called fade-out effects can be detected. This would be the case when program effects on cognitive development no longer occur after treatment had ended and treatment- and control-group are aligned again.
+failure: Presumably, after nine months of the program, one should probably be able to see some results already. However, it may be useful to collect data again after the end of the program... Just try again!
+#>
+
+#< award "first understanding"
+Congratulations! After taking a look at the data with head() and learning more about the variables, you now have a good first understanding of the program and the dataset.
+#>
+
+At the beginning I already mentioned that the early childhood cognitive development is the main outcome of interest of this program. However, to directly measure it empirically would be associated with a lot of effort and difficulties. The children therefore have been subjected to a number of performance tests, which serve this purpose. These tests were carried out mostly at the last two data collections. They evaluated the children's cognitive and socio-emotional capabilities and also captured their health and motor development. Here is an overview:
+
+- Social-personal, language, fine motor and gross motor skills were assessed with the *Denver Developmental Screening Test*.
+- Their weight and height was measured.
+- The *TVIP*, a receptive vocabulary test.
+- A short-term memory test and a leg motor test, both from the *McCarthy test battery*.
+- A test of associative memory from the *Woodcock-Johnson-Munoz battery of cognitive abilities*.
+- *The Behavior Problem Index (BPI)*, which consists of behavioral questions answered by the caregiver.
+
+Go on with the next exercise to continue with the graphical analysis of these test results.
+
+## Exercise 1.2 Graphical analysis
+
+In the following steps we want to graphically analyse the test results of the last 2 data collections *06* and *08*. We want to show how these results differ between the control and treatment group for every data collection. First, we need to load the required data again. We use the same data frame as in the exercise before. To read in `cashtransfers.dta` and assign it to `dat`, just press **edit** and **check**.
+  
+```{r "1_3"}
+#< hint
+display("just press edit and check")
+#>
+#< task
+# Load cashtransfers.dta into the variable dat.
+dat <- read_dta("cashtransfers.dta")
+#>
+```
+
+The problem with using many different tests is, that it is difficult to compare them with each other, because they have different outcome-scales. To make it easier to draw comparisons across outcomes, the authors converted each outcome into a within-sample z-score. They took the outcome of a test for a child, subtracted the sample mean (of this test) from it and divided the result by the standard deviation of the control group from 2006 of this test. One unit of this z-score thus corresponds with one standard deviation in 2006. The variables `z_tvip_06` and `z_tvip_08`, for example, therefore give the z-scores of the TVIP-test for *06* and *08* for each child.
+
+Before we will be able to create some graphics, we need to make some more data preparation first. Let's keep the TVIP-test as an example. Let us first select all the columns we need, to get a good comparison of the test results between the Treatment- and Control-group.
+
+To do that, we can use the `select()` command from the `dplyr` package. Generate a new data frame `dat2` of `dat`, keeping the variables `TREAT`, `z_tvip_06` and `z_tvip_08`. Then show the head of `dat2`.
+
+```{r "1_4"}
+#< fill_in
+# #load dplyr package
+# library(dplyr)
+#
+# #Use select() to build a new data frame and store it in dat2. 
+# #Just fill in the right values in the placeholders below and show the head of dat2:
+# dat2 <- ___ %>%
+#   select(TREAT, ___, z_tvip_08)
+#>
+library(dplyr)
+dat2 <- dat %>%
+  select(TREAT, z_tvip_06, z_tvip_08)
+head(dat2)
+```
+
+As you can see, there are some rows that have the value `NA` in this dataset. For the following analysis we want to remove them, because we can't use them in making our plots. To do this we will use the `na.omit()` function.
+```{r "1_5"}
+#< fill_in
+# #Use na.omit() to remove all rows with NA's 
+# #Just fill in the function in the placeholders below and show the head of dat2:
+#
+# dat2 <- ___(dat2)
+#>
+
+dat2 <- na.omit(dat2)
+head(dat2)
+```
+
+Great, now we have removed the NA's in our dataset! As a next step we want to "lengthen" our dataset, so that it will be easier to use for making plots with the `ggplot2` package. We will use the `pivot_longer()` function from the `tidyverse` package. It increases the number of rows and (potentially) decreases the number of columns. We will save the output in a new variable `dat_longer`.
+
+Just press **check** to run the code below and compare the output to the one from the last chunk to understand what has changed in the dataset:
+```{r "1_6"}
+#< hint
+display("just press check")
+#>
+#< task
+# "lengthen" our dataset dat2 by using the pivot_longer() function
+library(tidyverse)
+dat_longer <- pivot_longer(dat2, cols = c("z_tvip_06", "z_tvip_08"), names_to = "year", values_to = "z_score")
+head(dat_longer)
+#>
+```
+
+As you can see, the columns `z_tvip_06` and `z_tvip_08` turned into one new column named `year` and their values were added to the new column `z_score`. However, our dataset is still not optimal. In a next step, we use the `mutate()` function from the `dplyr` package and the `ifelse()` function to systematically change some of our values. More specifically, we want to reshape the dummy variable `TREAT` to say **"Treat"** and **"Control"** instead of **1** and **0**. We also want to reshape the variable `year` to indicate the start dates of the test phases (**"07/01/06"** and **"08/01/08"**) instead of **"z_tvip_06"** and **"z_tvip_08"**.
+
+Fill the "___" placeholder below to transform the dataset `dat_longer` and save it in `dat_longer_clean`. Then show the head of `dat_longer_clean`.
+```{r "1_7"}
+#< hint
+display("if TREAT==1 we want the column to say 'Treat', else we want it to be 'Control'")
+#>
+#< fill_in
+# #Reshape the columns TREAT and year from dataset dat_longer by using the mutate() und ifelse() function
+# #Just fill in the correct new value for 'TREAT=0' in the placeholders below and show the head of dat_longer_clean:
+
+# dat_longer_clean <- dat_longer %>%
+#   mutate(year = ifelse(year =="z_tvip_06", "07/01/06", "08/01/08")) %>%
+#   mutate(TREAT = ifelse(TREAT==1, "Treat", "___"))
+#>
+dat_longer_clean <- dat_longer %>%
+   mutate(year = ifelse(year =="z_tvip_06", "07/01/06", "08/01/08")) %>%
+   mutate(TREAT = ifelse(TREAT==1, "Treat", "Control"))
+
+head(dat_longer_clean)
+```
+
+#< award "data preparation takes time"
+Well Done! You just got to know a lot of packages and functions to prepare a dataset for visualization. Data preparation usually takes some time and is not the nicest work one can imagine. But you should still keep in mind that it is a crucial part of Data Science in general.
+#>
+
+Now our dataset looks good and we can start creating plots with it. Let's start with an easy plot that just shows all the z-scores at the two timestamps with different color depending on which group the child was part of, treatment or control. R offers a good package for graphics that is called `ggplot2`. To get familiar with the way this package works, in this first example the code is provided (For detailed explanations and descriptions of the package and its included functions you can take a look at https://cran.r-project.org/web/packages/ggplot2/ggplot2.pdf).
+
+After calling the `ggplot2` package with `library()` we use the `ggplot()` function to create a plot. We need to input our dataset (`dat_longer_clean`) and the variables that belong to the x- and y-axes (`aes(x=...,y=...)`). In this example, we want to plot `year` on the x-axis and the test z-score `z_score` on the y-axis. However, we pass year as a *date* datatype using the `as.date()` function because it is more convenient that way. So we write `(aes(x=as.Date(year, format = "%m/%d/%y"), y=z_score))`. With the `+` sign we can add more functions (and so called 'layers'). We add points with the command `geom_point()` and also separate our data by treatment and control group. Additionally, we also change the colors of our points and add labels to the axes.
+
+Press *check* to run the code. 
+```{r "1_8"}
+#< hint
+display("just press check")
+#>
+#< task
+#first load the package ggplot2
+library(ggplot2)
+
+#assign data to the axes (it is important to assign 'year' as a Date data type)
+ggplot(data = dat_longer_clean, aes(x=as.Date(year, format = "%m/%d/%y"), y=z_score))+
+  # show the data as points and differentiate them by 'TREAT'
+  geom_point(aes(color = TREAT))+
+  # choose the colors, in which the points will be shown
+  scale_color_manual(values = c("darkred", "steelblue"))+
+  # attach labels to the axes and arrange the scale of the x axis
+  labs(y="z-Score - TVIP-Test", x = "Date")+
+  scale_x_date(date_breaks = "4 months", date_labels =  "%b %Y")
+#>
+```
+
+As you can probably see, this representation is not optimal, because we only have two timestamps for our data and the points overlap. The best approach here would be to take the average of the z-scores per treatment group and per time point. We will do that in the next step. We first use the `group_by()` function of the `dplyr` package to group by our variables `TREAT` and `year.` Then we use the `summarise()` function to calculate the average z_score per group (and store it as `avg`) with the `mean()` function.
+
+Generate a new data frame `dat_average` of `dat_longer_clean`, grouping by the variables `TREAT` and `year`. Then show the head of `dat_average`.
+```{r "1_9"}
+#< hint
+display("We want to group the dataset by TREAT and year. Both should be mentioned in the group_by() function")
+#>
+#< fill_in
+# #Just fill in the correct variable in the placeholder below and show the head of dat_average:
+#
+# dat_average <- dat_longer_clean %>% 
+#  group_by(TREAT, ___) %>% 
+#  summarise(avg = mean(z_score)) %>%
+#  ungroup()
+#>
+dat_average <- dat_longer_clean %>% 
+  group_by(TREAT, year) %>% 
+  summarise(avg = mean(z_score)) %>%
+  ungroup()
+
+head(dat_average)
+```
+
+As you can see, `dat_average` only has four rows. One average z-score for every combination of `TREAT` and `year`, which are saved in the new column `avg`.
+
+Now we can make a better plot out of it. We will also connect the points of each treatment group with lines to better show their development over time. To do that, we use the function `geom_line()`. Press *check* to show the new plot. 
+```{r "1_10"}
+#< hint
+display("Just press check!")
+#>
+#< task
+#assign the new dataset dat_average to the axes (this time we take the new variable 'avg' as y)
+ggplot(data=dat_average, aes(x =as.Date(year, format = "%m/%d/%y"), y=avg))+
+  #Now we want to use lines instead of points, so we use geom_line()
+  geom_line(aes(color=TREAT)) +
+  geom_point(aes(color=TREAT), size=2)+
+  scale_color_manual(values = c("darkred", "steelblue"))+
+  labs(y="Average z-Score - TVIP-Test", x = "Date")+
+  scale_x_date(date_breaks = "4 months", date_labels =  "%b %Y")
+#>
+```
+
+Just answer these two quiz questions to make sure you understand the plot:
+#< quiz "plot1_1"
+question: What group had the higher average z-score on the 1st of July 2006?
+sc:
+    - Treat*
+    - Control
+success: Very good! The average z-score for children in the treatment group on 1st of July 2006 was about 0.19, while it was only about 0.01 for children in the control group.
+failure: Unfortunately incorrect! Take a closer look at the legend on the right of the plot to see what line-color corresponds with which group... Just try again!
+#>
+
+#< quiz "plot1_2"
+question: Is the following statement true? "The plot shows that the line for the *treat-group* is above the line for the *control-group* on **August 2007**. That means that at this time, the children from the *treat-group* had better TVIP-test results (z-scores) on average"
+sc:
+    - Yes
+    - No*
+success: Correct! The children didn't take any tests in August 2007! Therefore they don't have any results for that time. The plot just shows one line above the other because they connect the two values from 2006 and 2008 for each group.
+failure: Unfortunately incorrect! Potentially, they could have had better results at this time, but remember the two dates on which the tests were taken...
+#>
+
+As expected, we can see in the plot that children of the treatment group (which live in households that received cash transfers) perform better on average at the TVIP-test than those in the control group in both the first data collection in 2006 and the second in 2008. In the second data collection, however, the gap between the two groups is somewhat smaller. We can assume that the after-effect of the program wears off a little over time and the scores converge a bit. One could therefore assume that there is a small fade-out effect here.
+
+So far we have only covered the results of the TVIP-test (a receptive vocabulary test). As you may remember, there were also many other tests that covered other areas such as physical characteristics, memory or behavior. Since the authors determined the z-scores for each test, they also created the variables `z_all_06` and `z_all_08`. In the dataset that comes with the paper these variables are defined as *the z-score of the sum of all tests* at the respective time. Next, we want to look at the graphical development of this variable for each group, i.e. all the tests together. 
+
+Press *check* to show the new plot (All steps of the pre-processing from before are also included). I also added two red lines that indicate when the program starts and ends.
+```{r "1_11"}
+#< hint
+display("just press check to show the plot")
+#>
+#< task
+#pre-processing
+dat_all <- dat %>%
+  select(TREAT, z_all_06, z_all_08)
+
+dat_all_no_na <- na.omit(dat_all)
+
+dat_all_longer <- pivot_longer(dat_all_no_na, cols = c("z_all_06", "z_all_08"), names_to = "year", values_to = "z_score")
+
+dat_all_longer_clean <- dat_all_longer %>%
+  mutate(year = ifelse(year =="z_all_06", "07/01/06", "08/01/08")) %>%
+  mutate(TREAT = ifelse(TREAT==1, "Treat", "Control"))
+
+#creating the plot
+ggplot(data=dat_all_longer_clean %>% group_by(TREAT, year) %>% summarise(avg = mean(z_score)) %>%ungroup(), aes(x =as.Date(year, format = "%m/%d/%y"), y=avg))+
+  geom_line(aes(color=TREAT)) +
+  geom_point(aes(color=TREAT), size=2)+
+  scale_color_manual(values = c("darkred", "steelblue"))+
+  labs(y="Average z-Score - All tests", x = "Date")+
+  scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y", limits = c(as.Date("10/01/05", format = "%m/%d/%y"), as.Date("09/01/08", format = "%m/%d/%y")))+
+  geom_vline(xintercept = as.Date("11/01/05", format = "%m/%d/%y"), colour= "red")+
+  geom_vline(xintercept = as.Date("12/01/06", format = "%m/%d/%y"), colour= "red")+
+  annotate(geom="text", x=as.Date("05/15/06", format = "%m/%d/%y"), y=0.0875, label="Households from the
+treat-group receive
+cash transfers in
+this time",color="red")
+#>
+```
+
+Once again, we can clearly see that children of the treatment group had better test scores on average than the control group, both during the program and afterwards. Unfortunately, no tests were carried out before or at the beginning of the program. It would be interesting to see if the two groups were at the same level at that time. If the randomization was done well, then that should be the case (more on that topic in the next chapter). The only test that was conducted before the start of the program (2005) was the TVIP-test. Unfortunately, only about 25% of the children participated and the results are only given as raw scores, not z-scores, which is why we cannot compare them with the results from 2006 and 2008. Nevertheless, they will be included in the so-called baseline characteristics in the next exercise.
+
+The plots for the TVIP-test and all-tests differ in one aspect. The lines in this plot appear to be parallel. That means, the differences between the treatment group and the control group appear to be the same in both dates. Let's take a closer look at this quantitatively.
+
+First, take a look at the average z-scores for both groups at both time points. Just press *check*:
+```{r "1_12"}
+#< hint
+display("just press check to show the dataset")
+#>
+#< task
+dat_all_longer_clean %>% 
+  group_by(TREAT, year) %>% 
+  summarise(avg = round(mean(z_score), 4)) %>%
+  ungroup()
+#>
+```
+
+In the first data collection in **2006**, the difference between the average value of the treat group and that of the control group was 
+**0.0477 - 0.0134 = 0.0343**. 
+What was the difference at the second data collection in 2008?
+
+Complete the following equation to store the difference in the variable `diff_08`. Then show `diff_08`.
+```{r "1_13"}
+#< hint
+display("As you can see in the last table, the average z-score for the treatment group in 2008 is 0.1053 and that of the control group is 0.0728. Subtract these two values from each other to calculate the difference.")
+#>
+#< fill_in
+# #fill in the right numbers from the last table to evaluate the difference between the treat and control group in 2008. Then show diff_08.
+# 
+# diff_08 = ___ - ___
+#>
+diff_08 = 0.1053 - 0.0728
+diff_08
+```
+
+There you go, the two differences are equal up to the second decimal place. The lines thus run parallel and no fade-out effects can be detected, at least until the last data collection in 2008.
+
+Note that, even if it looks like it, this is not a classical **Difference-In-Difference estimation**. The difference-in-difference (diff-in-diff or DiD) is an estimator for the **causal** (average) treatment effect (Roth et al., 2022, p.6). It is a preferred estimator because it works under comparatively weak conditions but is able estimate the causal effect of a treatment. It computes how the difference between the treatment and control group has changed in the *experimental period compared to the pre-experimental period*. The following formula is used for estimation:
+$$DiD = (\overline{y}_{exp,tr}-\overline{y}_{exp,co})-(\overline{y}_{pre,tr}-\overline{y}_{pre,co})$$
+With $\overline{y}$ being the mean of the outcome of interest (tests on cognitive development), $exp$ meaning *during the program (2006)*, $pre$ meaning *before the program*, $tr$ meaning children from the *treatment group* and $co$ meaning children from the *control group* (e.g. $\overline{y}_{exp,tr}$ therefore means the average test result during the program (2006) for children from the treat group) (Roth et al., 2022, p.7 ff., using a slightly different notation).
+
+Remember that we only have data on test results for two points in time. At almost the end of the program (or experiment) in 2006 and 2 years after the program ended in 2008. With this in mind, answer the following quiz question: 
+#< quiz "exerciseDiD"
+question: Are we able to calculate the DiD estimator with our given data?
+sc:
+    - Yes we can calculate it.
+    - No, we can't calculate it*
+success: Correct! We have no data for the test results from the pre-experimental period.
+failure: Unfortunately not correct! Keep in mind that we only have data on the outcomes (tests on cognitive development) from **during** and **after** the program but to calculate the DiD, we would need test results from the **pre-experimental** period.
+#>
+
+Since we don't have any data on cognitive development from before the program, we can't calculate the DiD estimator. Furthermore, this estimator is also based on the so-called *parallel trends assumption*, which we also cannot confirm as fulfilled (more on this in the info box below).
+#< info "Parallel Trends Assumption"
+The major assumption for the DiD estimator is the so called **parallel trends assumption**. It means that if no experiment (i.e. treatment) would take place, the difference between the average outcome (here cognitive development) in the treatment and control group should be constant over time. Therefore, the requirement is that in the pre-experimental period the outcome-curves for the treatment and control group run parallel. In our case that means that without the cash transfer program, the group-specific trends of the cognitive development should be identical. It would imply that the test results in the treatment group would have changed at the same rate as the results in the control group if no cash transfer program would've taken place. If the parallel trends assumption is violated, the found estimator can not be interpreted as causal (Roth et al., 2022, p.6 ff.).
+  
+Since we don't have any data on cognitive development from before the program, we can't check whether the parallel trends assumption is violated. To graphically assess the parallel trends assumptions we would need observations of the cognitive development at several points of time **before** the treatment started. Our dataset sadly fails to meet this requirement.
+#>
+
+Now that you have seen that we can graphically conclude that the program possibly has long-lasting effects on children's cognitive development, we would like to look more closely in the next exercises at whether these effects can also be interpreted **causally**. Since we cannot use the DiD estimators for this, as explained above, we need other methods. One way to also achieve causal interpretation is **randomization** (also called "randomized experiments") (Athey and Imbens, 2017, p.78). This was also the approach of the program.  Go on with the next exercise to learn more about causality and the method of randomization.
+
+## Exercise 2 Randomization and Causality
+
+Before we move on to randomization, let's take a brief look at the main analysis of the paper from a statistical point of view. As a reminder, the paper analyses the impact of a cash transfer program on early childhood cognitive development. That means we want to find the **treatment effect** of the cash transfer program on the test results. Hence, for a child we want to find the difference between its test results with the cash transfer program and without the program. We define that there are $J$ children in our dataset with $j≤J$. We also have $K$ different tests with $k≤K$ for each child in 2006 (for simplicity we only look at 2006 and not 2008). Let $y_{jk}$ be the test result for child $j$ at test $k$ in 2006. We then find two potential outcomes: $y_{jk}^{(1)}$ if the child had participation at the program (i.e. the household received cash transfers) and $y_{jk}^{(0)}$ if no participation occurred. Thus, we find the treatment effect for child $j$ at test $k$ $\tau_{jk}$ as the difference between the potential outcomes:
+
+$$\tau_{jk} = y_{jk}^{(1)}-{y}_{jk}^{(0)}$$
+As a child either received the cash transfers or not, we cannot measure this treatment effect directly (Athey and Imbens, 2017, Chapter 3.1). That is why we need to find a way to consistently estimate the **average treatment effect** $\overline\tau_{jk}$ as an average of all the individual $\tau_{jk}$. One way to do this is via (simple) linear regression through Least Squares estimation (Athey and Imbens, 2017, Chapter 5.1):
+
+$$y_{jk} = \beta_0 + \beta_1\delta_{jk} + \varepsilon_{jk}$$
+where:
+- $y_{jk}$ is the *dependent variable*, it is the test result for child $j$ at test $k$ in 2006.
+
+- $\delta_{jk}$ is an *explanatory variable*. It is a dummy variable, which has the value 1 if a child got treated (i.e. lives in a household which received cash transfers through the program) and 0 otherwise. (This variable is also calle "treatment dummy")
+
+- $\varepsilon_{jk}$ is the error term with unobserved factors.
+
+$\beta_1$ is the coefficient we are looking for. It's the (causal) relation between the explanatory variable $\delta_{jk}$ and the dependent variable $y_{jk}$. If the explanatory variable is exogenous (uncorrelated with the error term $\varepsilon_{jk}$), we can assume that $\beta_1$ is the average treatment effect $\overline\tau_{jk}$ and can be consistently estimated by the OLS estimator $\hat\beta_1$. So, the estimator $\hat{\beta}_1$ of $\beta_1$ is only consistent if the correlation between the explanatory variable ($\delta_{jk}$) and the error term $\varepsilon_{jk}$ is $0$. Since the error term consists of multiple factors, it could include a relevant factor that is correlated with the explanatory variable $\delta_{jk}$. This is called an **endogeneity problem**. The correlation between the explanatory variable and the error term then differs from $0$. If we have an endogeneity problem, the OLS estimator $\hat\beta_1$ is biased and inconsistent, which means that it doesn't show the average treatment effect $\overline\tau_{jk}$ (Kennedy, 2008, p.139). To be precise, the sign of the (asymptotic) bias of the OLS estimator $\hat\beta_1$ is the same as the correlation between the explanatory variable $\delta_{jk}$ and the error term $\varepsilon_{jk}$. That means:
+- If $cor(\delta_{jk}, \varepsilon_{jk}) > 0$, then $\hat{\beta}_1$ overestimates the causal effect $\beta_1$
+- If $cor(\delta_{jk}, \varepsilon_{jk}) < 0$, then $\hat{\beta}_1$ underestimates the causal effect $\beta_1$
+- If $cor(\delta_{jk}, \varepsilon_{jk}) = 0$, then $\hat{\beta}_1$ consistently estimates the causal effect $\beta_1$
+
+(See Wooldridge, 2013, p.172 ff. For more information on linear regression theory you can look up Hill et al., "Principles of Econometrics", Chapter 2)
+
+Unfortunately, in reality we cannot directly measure the correlation of the error term and the explanatory variable, because variables unknown to us could also be included in the error term. That is why we have to approach the matter differently. In this exercise I want to set up a model for you to better understand this issue. But first, answer this quiz question about the coefficient $\beta_1$:
+
+#< quiz "exercise2_1"
+question: Let's look at the TVIP-test for example. Remember, in the last exercise we graphically derived that children from the treatment group had better (on average) results in this test than children from the control group. Taking into account the regression mentioned above with y being the TVIP-test results, from a theoretical perspective, what is the expected sign of our coefficient beta1 for the treatment dummy?
+sc:
+    - The expected sign of beta1 is positive.*
+    - The expected sign of beta1 is zero.
+    - The expected sign of beta1 is negative.
+success: Correct! With the plots from last exercise in mind, one would probably (intuitively) expect that the program benefits the cognitive development of a child and thus leads to a higher TVIP-score. The sign of beta1 would therefore be positive.
+failure: That's not quite what one would expect! The sign of beta1 tells us in which direction the treatment influences the test results... Think again about what that means if the treatment group had better results on average.
+#>
+
+However, one should always be cautious about such expectations derived from graphs. Remember, for $\hat\beta_1$ to be the real effect $\beta_1$, the explanatory variable $\delta_{jk}$ and the error term $\varepsilon_{jk}$ have to be uncorrelated. If they are correlated, the explanatory variable is **endogenous**. The found estimator $\hat\beta_1$ then is biased which means that we systematically over- or underestimate it compared to the real $\beta_1$. In order to better illustrate these dynamics, we can use so-called causal structures (also called causal graphs) (Athey and Imbens, 2017, p.82). You can create such structures in R with the package `DiagrammeR`. (Just look at the Infobox below for more information on how to create causal structures). For the sake of simplicity, we will not model these structures on our own. You can just look at the embeded pictures. Here is the first one:
+
+#< info "Causal Structures with DiagrammeR"
+In R you can create causal structures with the package `DiagrammeR`. You can load it with `library(DiagrammeR)`. It contains the function `grViz`. You can create the following causal structure on your own with this code:
+
+```{r "1", eval=FALSE}
+library(DiagrammeR)
+grViz('digraph G {
+
+x [label="Treatment/cash transfer program"]
+y [label="TVIP-test outcome 2006"]
+e [label="error term"]
+
+x -> y [label="+"]
+e -> x [label="?"]
+e -> y [label="?"]
+}')
+```
+#>
+
+<img src="causal1.png" style="max-width: 95%">
+
+The arrows symbolize causal dependencies and the circles represent certain variables/factors. In the following, we assume that the treatment does indeed have a positive causal effect on cognitive development. You can see it symbolized as a "+" sign on the arrow. As you can see, we don't know how and if the error term is influencing our dependent and explanatory variable. Let us think of scenarios where the signs would be more clear to us. 
+
+Let's first say the households were not randomly drawn for the treatment, but only the *households with particularly impaired children* were chosen to get the cash transfers. In this imaginary scenario, the cognitive ability of a child before the program would be part of the error term. Its influence on the explanatory variable (treatment) would be **negative**, because the smarter a child is, the less chance it has of living in a household with treatment. What would its causal relationship with the dependent variable (TVIP-test outcome 2006) be? Just write **"positive"**, **"neutral"** or **"negative"** in the following code-chunk:
+```{r "2_2"}
+#< task
+# Would the causal relationship of the error term (which contains the cognitive ability of a child before the program) with the dependent variable (TVIP-test outcome 2006) be 'positive', 'neutral' or 'negative'? Just write your answer as a string:
+
+#>
+"positive"
+#< hint
+display("Just write one of the following answers: 'positive', 'neutral', 'negative'")
+#>
+```
+
+Correct! If a child had good cognitive skills before the program, there is a good chance that it will still have good skills at the end of the program and thus a good TVIP score in 2006. If it had bad cognitive skills before the program, then it probably still has bad skills at the end of it. The signs of the relations in the causal structure then result as follows:
+
+<img src="causal2.png" style="max-width: 95%">
+
+In this particular case, would our estimator $\hat\beta_1$ ("effect of the treatment") from the regression be unbiased or would it over/underestimate $\beta_1$? Just write **"unbiased"**, **"overestimate"** or **"underestimate"** in the following code-chunk:
+```{r "2_4"}
+#< task
+# Would the estimator beta1_hat from our regression from above be 'unbiased' or would we 'overestimate' or 'underestimate' the real beta1? Just write your answer as a string:
+
+#>
+"underestimate"
+#< hint
+display("Just write one of the following answers: 'unbiased', 'overestimate', 'underestimate'")
+#>
+```
+
+Since, in this particular case, the error term $\varepsilon_{jk}$ has a negative causal relationship (and therefore negative correlation) with our explanatory variable $\delta_{jk}$ and a positive one with our dependent variable $y_{jk}$, we would underestimate $\beta_1$ in a regression. The control group would consist of more intelligent children (which also probably score higher test results in 2006) than the treatment group. We would therefore probably assume that the program has less impact than it actually does. (In this case, the error term acts as a so called *confounder*, because it influences both variables (Babyak, 2009, p.68))
+
+Let's look at another example to finish this topic. This time, let's say that the households were again not randomly selected for the program, but only the *households with particularly intelligent children* were chosen to get the cash transfers. In this case, the cognitive ability of a child before the program would again be part of the error term. Its influence on the explanatory variable (treatment) would be **positive**, because the smarter a child is, the higher its chance is of living in a household with treatment. Its causal relationship with the dependent variable (TVIP-test outcome 2006) would again be **positive**, due to the same reasons as before. The better the cognitive abilities of a child are before the treatment, the higher the chance is that they will still be good at the end of the program. The signs of the relations in the causal structure then result as follows:
+
+<img src="causal3.png" style="max-width: 95%">
+
+In this scenario, would our estimator $\hat\beta_1$ from the regression be unbiased or would we be over/underestimating $\beta_1$? Just write **"unbiased"**, **"overestimate"** or **"underestimate"** in the following code-chunk:
+```{r "2_6"}
+#< task
+# Would the estimator beta1_hat from our regression from above be 'unbiased' or would we 'overestimate' or 'underestimate' the real beta1? Just write your answer as a string:
+
+#>
+"overestimate"
+#< hint
+display("Just write one of the following answers: 'unbiased', 'overestimate', 'underestimate'")
+#>
+```
+
+#< award "first comes the theory..."
+Congratulations! You just worked your way through a lot of theory and are now ready to apply your knowledge on our dataset in the next exercise.
+#>
+
+Since, in this particular case, the error term $\varepsilon_{jk}$ has a positive correlation with our explanatory variable $\delta_{jk}$ and a positive one with our dependent variable $y_{jk}$, we would overestimate $\beta_1$ in a regression. The treatment group would consist of more intelligent children that, even without a treatment, already have a higher probability of scoring a high score in the test. They would probably make the effect of the treatment look better than it actually is.
+
+You have now seen 2 examples of how undetected/unobserved variables in the error term could bias our estimator. There are different approaches to dealing with this endogeneity problem. A very reasonable approach is to simply try to extend the regression with as many variables from the error term as possible, i.e. adding *control variables* to remove factors from the error term. However, this is only possible if one has the data for all the critical variables. Unobserved variables, like in our example the cognitive ability before the program, still remain in the error term (Wooldridge (2013) deals with this problem in an example on pages 206 and 207). We can't control for it because we simply have no data for it (remember, no tests were made before the program). So this approach wouldn't fix our problem of a biased estimator.
+
+Another approach, and also the one that the implementers of this program have chosen, is **randomization**. It can be very effective and is also called the scientific gold standard (Dugard, 2014, p.68) to estimate a causal effect. In (perfectly) randomized experiments, the treatment should be assigned randomly. That means our explanatory variable $\delta_{jk}$ (the treatment/cash transfer program) should be **uncorrelated** to all other factors that may affect the dependent variable $y_{jk}$ and thus uncorrelated with the error term $\varepsilon_{jk}$ (which includes those factors). In a well randomized experiment, we therefore have $cor(\delta_{jk}, \varepsilon_{jk}) = 0$. As said before, that means our explanatory variable is **exogenous** (Wooldridge, 2013, p.87) and our estimator $\hat{\beta}_1$ consistently estimates the unbiased effect $\beta_1$, which we then can assume to be the average treatment effect $\overline\tau_{jk}$. This is the effect we were looking for at the beginning of this exercise (Wooldridge, 2013, example on page 201).
+
+But, as already indicated, in order for us to use exactly these mechanisms to estimate the causal effect, the treatment randomization must have been perfectly **successful**. In the next two exercises, we will first take a closer look at how the randomization was done in the program and will then check whether it was successful.
+
+## Exercise 2.1 Randomization in the Program
+
+In the presented paper *Cash Transfers, Behavioral Changes, and Cognitive Development in Early Childhood: Evidence from a Randomized Experiment*, randomization was conducted as follows (Macours et al., 2012c, p.1-10). 
+
+6 municipalities in the (rural) Northwest of Nicaragua were chosen to participate in the program. All communities in those 6 municipalities were then grouped in pairs based on similarity in road access and microclimate (identified by municipality technical personnel). The mayors of those 6 municipalities were then invited to attend and participate in a lottery. Through the lottery, one community of each pair was selected as a treatment community, the other as control (in most cases). From all communities of those 6 municipalities, in the end, 56 treatment and 50 control communities were randomly selected through the lottery. Whether a household receives cash transfers therefore depends on the community in which it lives. Communities also tend to be geographically separated from each other, which reduces the potential for spillover effects from the treatment to the control communities. Baseline data on household assets and household composition were then used to define *program eligibility*, resulting in the identification of 3002 treatment and 1019 control households to participate in the program. Based on discussions with community leaders, 3.7 percent of all the households considered were re-assigned from non-eligible to eligible, and 3.7 percent from eligible to non-eligible. This procedure could be problematic for our randomization. To avoid any possible selection bias resulting from this re-assignment, the results are not taking this reclassification into account. From each eligible household, the primary caregiver (in most cases the mother) was then invited to a registration assembly to enroll in the program. Among the intent-to-treat households, about 95 percent enrolled to the program.
+
+Since data on test results were collected in both 2006 and 2008, **attrition** could also be a potential problem. Attrition was 1.3 percent in 2006 and 2.4 percent in 2008, which is not that much. More importantly, the attrition was uncorrelated with the treatment status and is therefore not that problematic, according to the authors.
+
+Go on to next the exercise, to investigate whether this method of randomization was successful.
+
+## Exercise 2.2 Randomization Check
+
+As mentioned in exercise 2, randomization must be successful in order to make causal statements. Successful randomization means that the treatment and control groups do not differ significantly in any characteristic before the start of the program ("at baseline") (Shadish et al., 2002, p.13 ff.). It would certainly have been best to randomly choose the treatment status for all households individually and not via communities. However, this is difficult to implement. The allocation via communities could more easily lead to problems (e.g. that treatment communities have different characteristics than control communities), since one has a smaller sample for the draw. But this method also has advantages, such as the fact that spillover effects (meaning that also children from the control group profit from cash transfers) are less possible, because the whole community (environment) of a child is ether treated or not. However, care has always been taken to ensure that randomization is as good as possible. In the following, we will take a closer look quantitatively at whether they have succeeded in doing so.
+
+For this we will create a so called *balance table*. It shows the average values of the control and treatment group for a lot of variables (baseline characteristics from before the program), that could be possible unobserved confounders later on (luckily, we have a lot of data to do that). The function `balance_table` from the package `RCT` allows us to easily generate such balance tables. But before we will come to that, we need to do some data preparation again. We only want to consider children for which we have at least one test result in 2008. The dummy variable `sample08` has the value 1 if that is the case. We also only want children in our dataset, that were either younger than six years (=72 months) when transfers started (in 2005) or born since then. In the following chunk we again use the `filter()` function from the `dplyr` package to filter our data set according to the criteria just mentioned.
+
+Complete the following code to store the new table in the variable `df_table1` and show the number of rows for `dat` and `df_table1` (using the `nrow()` function).
+```{r "2_7"}
+#< hint
+display("You only have to replace the placeholder in 'sample08==___' by the right value. Remember, the variable sample08 is a dummy variable that has the value 1 if the child has at least one test result in 2008")
+#>
+#< fill_in
+# #Load the data into the variable dat.
+# dat <- read_dta("cashtransfers.dta")
+#
+# #fill in the right value for 'sample08' to filter for children who have at least one test result in 2008.
+# df_table1 <- dat %>%
+#  filter(sample08==___) %>%
+#  filter(age_transfer < 72)
+#
+# #showing the number of rows for our original dataset 'dat' and our new filtered dataset 'df_table1':
+# c(nrow(dat), nrow(df_table1))
+#>
+dat <- read_dta("cashtransfers.dta")
+
+df_table1 <- dat %>%
+  filter(sample08==1) %>%
+  filter(age_transfer < 72)
+
+c(nrow(dat), nrow(df_table1))
+```
+
+As you can see, not many lines have been removed. Now we can continue with creating the balance table. As said before, we can use the function `balance_table` from the package `RCT` for it. This function takes a dataset and a treatment variable (that defines the groups in which we want to divide our data). We will use our variable `TREAT` here, as it divides our data in treatment and control group. Since our dataset `df_table1` still contains a lot of unnecessary variables, we first need to select the most important ones that we want to analyze in the balance table. The authors decided to choose a lot of variables on household and children **baseline characteristics**. That means characteristics from before the program like the weight for age or number of rooms in the house. We will again use the `select()` function from the `dplyr` package to select those variables and store them in a new dataframe `df_selected`. We will then transfer this new dataset together with the treatment variable `TREAT` to the `balance_table` function and store this new balance table in the variable `b_tab`. At last, we will show this balance table `b_tab` in a fancy way, using the `kbl` function from the `kableExtra` package.
+
+There is quite a lot going on in this chunk. Take your time to read through and understand each step. Then you can just press *check* to create and show the balance table.
+```{r "2_8"}
+#< task
+#load the package 'RCT'
+library(RCT)
+
+#using the dplyr-package function select(), select all the baseline characteristics that could be possible confounders and are therefore important to our balance table
+df_selected <- df_table1 %>% 
+  select(TREAT, male, age_transfer, s2mother_inhs_05, ed_mom, yrsedfath, tvip_05, weight_05, height_05, a10whz_05, bweight, weighted_05, s4p6_vitamina_i_05, s4p7_parasite_i_05, s1male_head_05, s1hhsize_05, s1hhsz_undr5_05, s1hhsz_5_14_05, s1hhsz_15_24_05, s1hhsz_25_64_05, s1hhsz_65plus_05, s3ap5_rooms_h_05, s3ap23_stime_h_05, s3ap24_htime_h_05, s3ap25_hqtime_h_05, s3atoilet_hh_05, s3awater_access_hh_05, s3aelectric_hh_05, s11ownland_hh_05, cons_tot_pc_05, cons_food_pc_05, propfood_05, prstap_f_05, pranimalprot_f_05, prfruitveg_f_05)
+
+#use the function balance_table() to create a balance table which divides our dataset in two groups, using the variable 'TREAT'
+b_tab<-balance_table(df_selected, "TREAT") %>%
+  #we use 'mutate' here because we want very small p-values to be displayed as '<0.01' and round the rest to 3 digits
+  mutate(p_value1 = ifelse(p_value1<0.01, "<0.01", as.character(round(p_value1, 3))))
+
+#show the balance table 'b_tab' with the 'kbl' function from the kableExtra package
+library(kableExtra)
+
+b_tab %>%
+  kbl(caption = "Balance Table",col.names = c("Variable Name", "Mean Control", "Mean Treat", "P-value diff T-C"), digits = 2, align = c("l", "r", "r", "r")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  kable_paper(full_width = F) %>%
+  add_header_above(header = c(" "=1, setNames(1,paste("N =", as.numeric(df_table1 %>% filter(TREAT==0) %>% summarise(n())))), setNames(1,paste("N =", as.numeric(df_table1 %>% filter(TREAT==1) %>% summarise(n())))), " "=1))
+#>
+#< hint
+display("Just press 'check' to run the code and show the balance table.")
+#>
+```
+
+In the first column we see the names of all the chosen variables. In the second and third column we see the mean values (for each variable) per treatment group "Control" and "Treat". Also note that in the header, we can see the number of observations for each group (e.g. N=1040 for the control group). Overall we have 4245 observations (children) in our dataset (note that this doesn't mean that we have 4245 observations for every variable). In the last column we can see the p-value of a statistical test (t-test) of whether the means are significantly different between both groups.
+
+For example, the average age at time of the first transfer (`age_transfer`) in the control group is 22.36 months and in the treatment group 20.94 months. The difference of about 1.5 months seems relatively small. The p-value of a test with the null hypothesis that the means are the same is 19.8% (0.198). This means that this difference in means is not statistically significant (using the common 5% threshold). Take your time to look at all the baseline characteristics that are considered here.
+
+Before we look at the significance, let us try to interpret some of the values. The variable `ed_mom` gives the years of schooling of the mother of the child and `yrsedfath` of the father. `height_05` and `weight_05` give z-scores of the child's height and weight for its age. Just try to answer this quiz question:
+#< quiz "exercise2_1_1"
+question: Given this data, do you think the authors concluded that these are disadvantaged children?
+sc:
+    - yes*
+    - no
+success: Good intuition! There are a number of variables that indicate that the children from our dataset are disadvantaged.
+failure: That's not quite what one would expect! Take a closer look at the education of the parents or physical characteristics like the Height-for-age z-score...
+#>
+
+On average, both parents have only about four years of education. In addition, the children are on average too low in weight and too short in height for their age. The paper also notes a lack of balance in their diets, due to the low proportion of animal protein and vegetable/fruit consumption. (You can also take a look at Table 2 of the paper to see how many children of our dataset are in the lowest 25 (or 10) percent of international distribution at certain tests).
+
+Remember, for our randomization to be successful, the mean values of the both groups should not differ significantly. We therefore need to analyse the p-values of our baseline characteristics to determine whether the randomization was successful. Since the p-value is from a test with the null hypothesis that the means are the same, higher p-values suggest that the difference in means is not statistically significant. As a rule of thumb we can say that a p-value below the 5% (0.05) threshold suggests that the difference in means is significant. This then does not speak for a successful randomization.
+
+To better understand the use of p-values, answer the following 2 quiz questions:
+#< quiz "exercise2_1_2"
+question: If we look at the variable `s1hhsize_05` (which gives the number of people that live in the child's household), which group has the significantly higher value?
+sc:
+    - Control
+    - Treatment
+    - None*
+success: Very Good! The average values may differ per group, but since the p-value is 0.662, we consider the difference as not significant and we can't deny the null hypothesis that the means are the same.
+failure: Unfortunately not correct! Note that the question asks about the **significantly** higher value. Look at the p-value of this variable and remember that a p-value **below** the 5% (0.05) threshold suggests that the difference in means is significant
+#>
+
+#< quiz "exercise2_1_3"
+question: Which of the following variables has the most significant difference between the control and treatment group?
+sc:
+    - Age in months at time of first transfer (`age_transfer`)
+    - Share of people between 25 and 65 in the household (`s1hhsz_25_64_05`)
+    - Percentage of food in total expenditures (`propfood_05`	)*
+    - Time to municipal headquarter in hours (`s3ap25_hqtime_h_05`)
+success: Correct! The p-value of this variable is '<0.01' which means it is smaller than 0.01. Thus it has the lowest p-value of those 4 examples.
+failure: Unfortunately not correct! Look carefully at the p-values of the variables and remember that, the lower the p-value, the more it suggests that the difference in means is significant.
+#>
+
+#< award "balance tables"
+You are now able to successfully create a balance table and interpret its values. This is a very useful skill in case you ever have to work with experiments that claim to be randomized. Therefore you earned an award! 
+#>
+
+At this point you have probably already noticed that, unfortunately, we have some variables in our data set where the p-value is below 5%, suggesting that the difference in means is significant and thus the randomization not successful. The most problematic variables with the lowest p-values are `weight_05` (Weight-for_age z_score), `height_05` (Height-for-age z-score), `s4p6_vitamina_i_05` (received vitamin A in the last 6 months), `s4p7_parasite_i_05` (received anti-parasite drug in the last 6 months), `s1hhsz_65plus_05` (share of people aged 65 years and older in the household), `s3ap23_stime_h_05` (time to primary school in hours), `s3ap24_htime_h_05` (time to health center in hours), `s3ap25_hqtime_h_05` (time to municipal headquarter in hours) and `propfood_05` (percentage of food in total expenditures). All of them have p-values even below 1%. As already mentioned, this indicates that the randomization method of the program did not lead to a 100% successful randomization, at least not in those areas. For the majority of variables, however, there is no significant difference between the groups. In addition, one should always look at each variable individually to see whether the variable is important and would have an influence on the program outcome (cognitive development). Also note that the significant imbalance could also be just bad luck. For example, even if randomization is perfect, using the common 5% threshold there is a 5% probability that we find a significant imbalance at a 5% level for *any* given explanatory variable. Meaning, even if the null hypothesis is satisfied. The authors of the paper also conclude that the randomization was successful with some small imbalances between the groups. In the paper, however, the authors have used standard errors that were *clustered at the community level*. You can take a look at the infobox below, to find out more about that topic.
+
+#< info "Clustered standard errors"
+In some scenarios, data are structured in groups or clusters (e.g. students within classes, survey respondents within countries, etc.). In our case, each child lives in one of the communities with other children, so within each community, the errors will likely be correlated. Ignoring this structure typically leads to **lower standard errors**, which means that we (falsely) assume that our estimates for the mean values are **too precise**. This leads to overly-narrow confidence intervals, **lower p-values** and possibly wrong conclusions (Cameron and Miller, 2015, p.3 ff.).
+#>
+
+I decided not to replicate this method here because it would involve a lot of extra work. Basically, the bottom line is that our p-values are somewhat smaller (more "conservative") than those of the authors in the paper, meaning, we find more variables that differ significantly between the two groups at the 5% level than the authors. In the paper they only find `s4p7_parasite_i_05` at the 5% level and a few others at the 10% level.
+
+There are now several ways to deal with this not quite optimal randomization. We have already mentioned one of them. It was the DiD estimator, which we sadly cannot calculate. Another way to deal with imperfect randomization, and also the one the authors chose, is to simply control for the imbalanced variables in our regressions. The next exercise analyses the impact of the program via regressions and takes up this topic.
+
+## Exercise 3 Program Effects on Child Development
+
+This exercise contains the main results of our analysis. We will empirically estimate the effect of the cash transfer program on early childhood cognitive development.
+
+First of all, the methodology. We will first estimate regressions of the following form with *no control variables*:
+
+$$Y_{k} = \beta_0+\alpha_kT, \quad\quad k =1...K,$$
+where 
+- $Y_{k}$ is the *k-th* outcome, meaning the *k-th* test. We have 10 different tests in the first data collection in 2006 and 11 in the second in 2008. 
+- $T$ is our treatment dummy variable which has the value 1 if the child is from a community that received the cash transfers and 0 otherwise. 
+- $\beta_0$ is the intercept.
+
+Let's start with an example regression. We will use the TVIP-test result (z-score) from 2006 as the dependent variable $Y_{k}$.
+
+R offers some tools to do Ordinary Least Square (OLS) regressions. The simplest way is to use the `lm()` function in combination with `summary()` (to produce result summaries). However, the authors have chosen to adjust the standard errors for clustering at the community level. This subject has been broached in an infobox in the last exercise. You can take a look at the infobox below for further information on what this means for regressions. 
+
+#< info "Clustered standard errors in regressions"
+In ordinary least squares (OLS) regression, we assume that the regression model errors are independent. This is not the case in our dataset: Each child lives in one of the communities with other children so within each community, the errors will be correlated. Although that is **not a problem for our regression estimates** (they are still unbiased (Roberts, 2013, slide 12)), it is a problem for for the **precision** of our estimates. The precision will typically be overestimated, meaning that the standard errors will be lower than they should be (Cameron and Miller, 2015, p.33 ff.). The reason for this is that within our clusters (here, communities) we usually have lower variance since the children come from the same community and could therefore easily have correlated characteristics. This lowers the standard errors of our estimates. Clustered standard errors are a common way to deal with this problem. (See *Cameron and Miller (2015)* for the more detailed mathematical background to this approach)
+#>
+
+To implement this in R we first have to load the `estimatr` package. Press *edit* and *check* to load the package and again store the dataset in the variable `dat`.
+```{r "3_1"}
+#< task
+#load the package 'estimatr'
+library(estimatr)
+
+# Load cashtransfers.dta into the variable 'dat'
+dat <- read_dta("cashtransfers.dta")
+#>
+#< hint
+display("Just press 'edit' and 'check' to run the code.")
+#>
+```
+
+`estimatr` contains a function called `lm_robust()`, which basically does the same as `lm()` (fitting a linear model), but provides a variety of options to use on standard errors. By adding "clusters = ___" you can specify the variable by which the standard errors are to be clustered. In our case, we will use the variable `unique_05` here, since it is a unique community-ID for the community in which the child lives. In addition, the regressions in the paper were estimated with the statistical software **Stata**. R uses a different variance estimator than Stata. Since we want to replicate the results of the paper, we also have to add "se_type = 'stata'" to our function to use the same estimator as Stata.
+
+Now use the `lm_robust()` command on `dat` to regress the outcome variable of interest `z_tvip_06` on the treatment dummy `TREAT`. Use the variable `unique_05` to cluster the standard errors. Assign the results to `reg_nocontrol`. Then show a summary of `reg_nocontrol`.
+```{r "3_1_1"}
+#< hint
+display("You don't have to change anything in 'lm_robust()'. Just show the summary() of the resulting model 'reg_nocontrol'.")
+#>
+#< task
+#Show the results of 'reg_nocontrol' with using 'summary()' on it.
+reg_nocontrol <- lm_robust(z_tvip_06 ~ TREAT, 
+              clusters = unique_05, 
+              se_type = 'stata', 
+              data = dat)
+#>
+summary(reg_nocontrol)
+```
+
+We receive an estimator $\hat{\alpha}_1$ of our treatment effect $\alpha_1$ of about $0.18$. The estimator is positive, which is what we would expect. If we would interpret the effect as **causal**, we would think that the cash transfer treatment was leading to higher TVIP-test z-scores of about *roughly* $0.18$ (meaning 0.18 standard deviations) on average in 2006 for children that received the treatment. Since our data set comes from a randomized experiment (and we settled on the fact that it was successful), such an causal interpretation is probably valid. It is still a bit debatable because our balance table suggested that randomization may not have been perfect on every variable and we don't have any control variables in this regression. Given the word *roughly* in our interpretation, one would probably consider it as valid. The treatment p-value (`Pr(>|t|)` for `TREAT`) is about $0.015$, which is below $0.05$. That means the coefficient is significant at the 5%-level.
+
+In exercise 2.2 we suggested that adding control variables might be a possible way to solve the causality problem that we have due to imperfect randomization. But remember, adding control variables in theory does not solve the entire problem. Since we have data for all the imbalanced variables we observed in our balance table, we can control for them in our regressions. This means imbalances in **observable** control variables are not directly a problem. However, the amount of significantly imbalanced variables in our dataset could indicate that the randomization in the experiment might not have been perfect, as already mentioned. This suggests that also **unobservable** confounders like e.g. motivation are potentially not equally distributed across the control and treatment groups. These could then lead to a bias in the result and we will have to be careful in interpreting our estimators as causal (Wooldridge, 2013, example on page 201). In the next steps we will also add control variables to our regressions and they will have the following form:
+
+$$Y_{k} = \beta_0+\alpha_kT + \beta_kX + \varepsilon_{k}, \quad\quad k =1...K,$$
+where $X$ is a set of control variables. The paper distinguishes here between two possible versions of $X$. The first one only contains the *age and gender* of the child and the other one has *extended controls*, meaning many other baseline and household characteristics.
+
+Now regress `z_tvip_06` on the treatment dummy `TREAT`, the *age* of the child at the start of the treatment `age_transfer` and the *gender* dummy `male`, which takes the value 1 if the child is male. Again, use the variable `unique_05` to cluster the standard errors. Assign the results to `reg_tvip06`. Then show the results of `reg_tvip06` next to the ones of `reg_nocontrol` with the `htmlreg()` function from the `texreg` package:
+```{r "3_2", results='asis'}
+#< hint
+display("You only have to replace the placeholders in 'lm_robust()' by the right values.")
+#>
+#< fill_in
+# #fill in the right values in the following 'lm_robust' function, then show the results with the htmlreg() function.
+# reg_tvip06 <- lm_robust(z_tvip_06 ~ TREAT + ___ + male, 
+#               clusters = ___, 
+#               se_type = 'stata', 
+#               data = dat)
+
+# #Read in the package 'texreg'
+# library(texreg)
+
+# #Show the regression results
+# htmlreg(list(reg_nocontrol, reg_tvip06),include.ci = FALSE, stars = c(0.001, 0.01, 0.05), doctype = FALSE, center = TRUE, caption = "Comparison of our Regressions on the TVIP-test", custom.model.names=c("No controls","Age & gender controls"), groups = list("Control variables" = 3:4), caption.above=TRUE)
+#>
+reg_tvip06 <- lm_robust(z_tvip_06 ~ TREAT + age_transfer + male, 
+               clusters = unique_05, 
+               se_type = 'stata', 
+               data = dat)
+library(texreg)
+htmlreg(list(reg_nocontrol, reg_tvip06),include.ci = FALSE, stars = c(0.001, 0.01, 0.05), doctype = FALSE, center = TRUE, caption = "Comparison of our Regressions on the TVIP-test", custom.model.names=c("No controls","Age & gender controls"), groups = list("Control variables" = 3:4), caption.above=TRUE)
+```
+
+#< award "pretty tables"
+Well done, you just created your first regression output table. It can often be worth to put some effort into creating fancy tables while presenting regression results (instead of just showing them with summary()). You just used the *texreg* package for that, another popular example is the *stargazer* package.
+#>
+
+Now we receive an estimator $\hat{\alpha}_1$ of our treatment effect $\alpha_1$ of about $0.20$, which is a bit higher than in the regression without control variables. The treatment p-value is below $0.01$. That means the coefficient is now significant even at the 1%-level.
+
+Let us now run the same regression with the *extended set of controls* $X$. In addition to age and gender, characteristics such as "age and gender of the household head, the years of schooling of the mother, the number of household members, the fraction of members in five age categories, birth weight, height-for-age, weight-for-age, TVIP score, whether a child has been weighed, received deworming medicine, and vitamin A in the last six months, baseline community averages of height-for-age, weight-for-age, and TVIP score, and municipal fixed effects" (Macours et al., 2012, p.258) are also included here. With adding them to our regression we want to control for baseline differences between the treatment and control group. Now show all three regression outputs next to each other with the `htmlreg()` function. Just press *check* to run the regression and show the results:
+```{r "3_3", results='asis'}
+#< task
+# Press 'check' to fit the regression to 'reg_tvip06_extended' and show its results next to the ones from the last chunks:
+reg_tvip06_extended <- lm_robust(z_tvip_06 ~ TREAT + age_transfer + male + male + s1age_head_05 + s1male_head_05 + ed_mom_inter + s1hhsize_05 + s1hhsz_undr5_05 + s1hhsz_5_14_05 + s1hhsz_15_24_05 + s1hhsz_25_64_05 + s1hhsz_65plus_05 + bweight_inter + bweight_inter + height_05_inter + weight_05_inter + tvip_05_inter + ed_mom_miss + bweight_miss + tvip_05_miss + height_05_miss + weight_05_miss + com_haz_05 + com_waz_05 + com_tvip_05 + com_control_05 + com_vit_05 + com_deworm_05 + com_notvip + MUN2 + MUN3 + MUN4 + MUN5 + MUN6, 
+               clusters = unique_05, 
+               se_type = 'stata', 
+               data = dat)
+
+# Show the regression results from the previous tasks next to each other
+htmlreg(list(reg_nocontrol, reg_tvip06, reg_tvip06_extended),include.ci = FALSE, stars = c(0.001, 0.01, 0.05), doctype = FALSE, center = TRUE, caption = "Comparison of our Regressions on the TVIP-test", custom.model.names=c("No controls","Age & gender controls", "Extended controls"), groups = list("Control variables" = 3:34), caption.above=TRUE)
+#>
+#< hint
+display("Just press 'check' to run the code.")
+#>
+```
+
+This time we receive an estimator $\hat{\alpha}_1$ of about $0.22$, so its again a bit higher than before. The standard error went down a little and the coefficient is still significant at the 1%-level. 
+
+So, we have three different results for $\hat{\alpha}_1$ so far. In the regression with **no** control variables it has the value $0.18$, in the one with only **age and gender** as control variables it is at $0.20$ and with **extended controls** it is at $0.22$.
+
+Before we continue with the analysis, answer the following quiz question:
+#< quiz "exercise3_1_1"
+question: If we assume that the randomization was 100% successful, would we expect a systematic change in the estimator $\hat{\alpha}_1$ by adding more control variables for baseline characteristics to the regression like we just witnessed?
+sc:
+    - Yes, we would expect a systematic increase in the estimator like we witnessed.
+    - Yes, but we would expect a systematic decrease in the estimator.
+    - No, we would not expect a systematic change in the estimator.*
+success: Correct! If the randomization was completely successful, we wouldn't need control variables to estimate the causal effect $\alpha_1$ because the treatment and control group would be distributed equally on every characteristic. The treatment dummy would be uncorrelated with the error term and we we would not expect it to (systematically) influence the treatment effect in estimations without control variables.
+failure: Unfortunately not correct! Perfect randomization means that the treatment and control group are distributed equally on every characteristic. Therefore we would not expect any characteristic to influence the treatment effect. Think again about what this means for the estimator of the treatment effect when we add control variables for the characteristics.
+#>
+
+Of course, random fluctuations can also play a role, but we can state that this result is consistent with the imbalancy between the treatment and control group at baseline we have found in exercise 2.2. It is an indication that we have to be careful with the causal interpretation of the coefficients. However, one must still mention that the differences are not very big and therefore the problem of imbalance not crucial. The significance of the estimators also increases as more control variables are added (i.e. the p-values of the estimators decrease). However, this effect was expected, because adding extra control variables might significantly reduce the error variance here, leading to a more precise estimate of the treatment (Wooldridge, 2013, example on pages 206 and 207). This pattern also shows in most of the other tests (see 'Table 3 - Impacts on Individual Tests in 2006 and 2008' from the paper).
+
+Next, we estimate the regression for the TVIP-test result (z-score) from **2008** as the dependent variable $Y_{k}$ and the set of **extended** control variables $X$. Store the result in `reg_tvip08_extended` and show its result next to the one from **2006** with the `htmlreg()` function (to save some space we will not show the coefficients for the control variables by now on because they are unimportant for us).
+```{r "3_4", results='asis'}
+#< hint
+display("You only have to replace the placeholder in 'lm_robust()' for the dependent variable by the right value. Remember, variable names from 2008 are built the same way as from 2006, but have '_08' at the end, instead of '_06' (take a look at the last exercise to see the variable name for the TVIP-test result (z-score) from 2006)")
+#>
+#< fill_in
+# #fill in the right value for the dependent variable in the following 'lm_robust' function:
+# reg_tvip08_extended <- lm_robust(___ ~ TREAT + age_transfer + male + male + s1age_head_05 + s1male_head_05 + ed_mom_inter + s1hhsize_05 + s1hhsz_undr5_05 + s1hhsz_5_14_05 + s1hhsz_15_24_05 + s1hhsz_25_64_05 + s1hhsz_65plus_05 + bweight_inter + bweight_inter + height_05_inter + weight_05_inter + tvip_05_inter + ed_mom_miss + bweight_miss + tvip_05_miss + height_05_miss + weight_05_miss + com_haz_05 + com_waz_05 + com_tvip_05 + com_control_05 + com_vit_05 + com_deworm_05 + com_notvip + MUN2 + MUN3 + MUN4 + MUN5 + MUN6, 
+#               clusters = unique_05, 
+#               se_type = 'stata', 
+#               data = dat)
+#
+# #creating the table:
+# htmlreg(list(reg_tvip06_extended, reg_tvip08_extended),include.ci = FALSE, stars = c(0.001, 0.01, 0.05), doctype = FALSE, center = TRUE, caption = "Regressions on the TVIP-test for 2006 and 2008 with extended controls", custom.model.names=c("2006", "2008"), caption.above=TRUE, custom.coef.map = list("(Intercept)"="(Intercept)", "TREAT"="TREAT"))
+#>
+reg_tvip08_extended <- lm_robust(z_tvip_08 ~ TREAT + age_transfer + male + male + s1age_head_05 + s1male_head_05 + ed_mom_inter + s1hhsize_05 + s1hhsz_undr5_05 + s1hhsz_5_14_05 + s1hhsz_15_24_05 + s1hhsz_25_64_05 + s1hhsz_65plus_05 + bweight_inter + bweight_inter + height_05_inter + weight_05_inter + tvip_05_inter + ed_mom_miss + bweight_miss + tvip_05_miss + height_05_miss + weight_05_miss + com_haz_05 + com_waz_05 + com_tvip_05 + com_control_05 + com_vit_05 + com_deworm_05 + com_notvip + MUN2 + MUN3 + MUN4 + MUN5 + MUN6, 
+               clusters = unique_05, 
+               se_type = 'stata', 
+               data = dat)
+
+htmlreg(list(reg_tvip06_extended, reg_tvip08_extended),include.ci = FALSE, stars = c(0.001, 0.01, 0.05), doctype = FALSE, center = TRUE, caption = "Regressions on the TVIP-test for 2006 and 2008 with extended controls", custom.model.names=c("2006", "2008"), caption.above=TRUE, custom.coef.map = list("(Intercept)"="(Intercept)", "TREAT"="TREAT"))
+```
+
+Now we receive an estimator $\hat{\alpha}_1$ of our treatment effect $\alpha_1$ of about $0.09$. Since the standard deviation of 2006 was used to calculate all z-scores, we can directly compare the values between 2006 and 2008. The estimator is still positive but only about half as high as for 2006.  Moreover, the estimator is no longer significant at the 10% level. This confirms our graphical results from exercise 1.2 where we saw that the treatment and control groups somewhat converge in terms of test scores in 2008 and have a smaller difference than in 2006. The households have not received any cash transfers for two years in 2008 and the results suggest that for the TVIP test (repulsive vocabulary), the effect of the treatment has strongly decreased after this time. The treatment doesn't have a significant effect on the test results anymore.
+
+So far we have only looked at the TVIP test. Let's now estimate the regression results for **all tests**. The authors state that they used so called **seemingly unrelated regressions (SUR)** for this purpose. Basically, their method carries out an individual regressions for every Test and in the end calculates the average of all the coefficients for `TREAT` that result for the different outcomes (tests). The formula looks as follows:
+$$\overline\alpha = \frac{1}{K}\sum_{k=1}^K\hat{\alpha}_k$$
+Remember that $K$ is the number of tests we have and $\hat{\alpha}_k$ is the coefficient for `TREAT` of the *k-th* test (estimated with **extended controls**).
+
+We start again with the year 2006. In this year we have the results for 10 different tests. To perform SUR in R, we can use the function `systemfit()` from the `systemfit` package. This function requires a list of all the formulas for the regressions that we want to run as an input parameter. The first big step is to create this list. We start with defining a vector `list_06`, which contains the names of all tests of 2006. This vector therefore contains all the "left sides" of our regression formulas, i.e. all the different dependent variables. To create complete formulas we also need the "right side" of them, i.e. all independent variables (`TREAT` and the extended set of controls). We store them (connected with a "+") as a character in `right_side_formula`. Using those two variables, we then create a list called `system`. With the `lapply()` function we iterate over all entries of `list_06`. For each of them (i.e. each test) we create an individual regression formula, connecting it with "~" and `right_side_formula`. All these formulas we store in the vector `system`, which we transform to a list using the `as.list()` command.
+Click *check* to create the list `system`, which contains the formulas, then show the first entry of it as an example to see if it worked:
+```{r "3_5"}
+#< task
+# Just press 'check' to create all the necessary prerequisites for running SUR:
+
+list_06 <- c("z_tvip_06", "z_language_06", "z_memory_06", "z_social_06", "z_behavior_06", "z_grmotor_06", "z_finmotor_06", "z_legmotor_06", "z_height_06", "z_weight_06")
+
+right_side_formula <- "TREAT + age_transfer + male + s1age_head_05 + s1male_head_05 + ed_mom_inter + s1hhsize_05 + s1hhsz_undr5_05 + s1hhsz_5_14_05 + s1hhsz_15_24_05 + s1hhsz_25_64_05 + s1hhsz_65plus_05 + bweight_inter + bweight_inter + height_05_inter + weight_05_inter + tvip_05_inter + ed_mom_miss + bweight_miss + tvip_05_miss + height_05_miss + weight_05_miss + com_haz_05 + com_waz_05 + com_tvip_05 + com_control_05 + com_vit_05 + com_deworm_05 + com_notvip + MUN2 + MUN3 + MUN4 + MUN5 + MUN6"
+
+#creating the list 'system', which contains all formulas and showing the first entry of it:
+system = as.list(lapply(list_06, function(x){
+  as.formula(paste0(x, "~", right_side_formula))
+}))
+#showing its first entry
+system[1]
+#>
+#< hint
+display("Just press 'check' to run the code.")
+#>
+```
+
+Looks Good! This list of formulas `system` can now be used in the function `systemfit()` to run the SUR. This function also needs a method. Unfortunately, the paper does not describe in detail what method they used. After trying out some methods and comparing the results with the ones from the paper, it became clear that the method "OLS" comes very close to the results of the paper. We will therefore use this method. `systemfit()` also needs a dataframe, for what we can use `dat`. We will store the fitted model in `fitsur`. Fill in the right value in the placeholder below to fit the SUR with our formulas stored in `system` and save it as `fitsur` (Be aware that this may take a moment to load).
+```{r "3_5_2"}
+#< fill_in
+# #Replace the placeholder in the code with the name of the list that contains our regression formulas.
+# library(systemfit)
+#
+# fitsur <- systemfit(___, method = "OLS", data=dat)
+#>
+library(systemfit)
+
+fitsur <- systemfit(system, method = "OLS", data=dat)
+#< hint
+display("You just have to replace the placeholder in the code with our list 'system', which contains our regression formulas.")
+#>
+```
+
+The model contains all coefficients of the 10 regressions that we passed to it with `system`. In sum those are 340 (10x34). They are accessible with `fitsur$coefficients` and we will save them as `all_coefs`. Press *check* to create and show `all_coefs`.
+```{r "3_5_3"}
+#< task
+#press 'check' to show all the coefficients from our 10 regressions
+all_coefs <- fitsur$coefficients
+all_coefs
+#>
+#< hint
+display("Just press 'check'.")
+#>
+``` 
+
+As you can see, `systemfit` names all coefficients in the following way: e.g. 'eq1_TREAT' for the TREAT coefficient of the first equation, 'eq5_age_transfer' for the 'age_transfer' coefficient of the fith regression and so on. Remember that we are interested in calculating the mean of all coefficients of `TREAT`, so the next step is to only select those out of all the coefficients. For that we first store all the names of the coefficients as a vector in the variable `coef_names` using the `names()` function. Next, we check every entry (meaning, every coefficient name) to whether it contains the substring "_TREAT". If they contain it, their value gets set to TRUE and if not to FALSE. We will do this with the `grepl()` function and store the resulting vector in `TREAT_names`. Just press *check* to carry out these two steps and show `TREAT_names`:
+
+```{r "3_5_3"}
+#< task
+#press 'check' to select the TREAT coefficients and show 'TREAT_names'
+coef_names <- names(all_coefs)
+TREAT_names <- grepl("_TREAT", coef_names)
+TREAT_names
+#>
+#< hint
+display("Just press 'check'.")
+#>
+```
+
+Good, now we know which of the 340 coefficients belong to the `TREAT` variable. We can now pass this vector to `fitsur$coefficients` to select only those rows and columns that have the value TRUE and therefore contain a coefficient for `TREAT`. We will store it in `TREAT_coefs`. Press *check* one more time to show `TREAT_coefs`:
+```{r "3_5_4"}
+#< task
+#press 'check' to select the TREAT coefficients and show 'TREAT_coefs'
+TREAT_coefs <- all_coefs[TREAT_names]
+TREAT_coefs
+#>
+#< hint
+display("Just press 'check'.")
+#>
+```
+
+Here you can see the coefficients for `TREAT` for the 10 regressions of the 10 different tests. Remember that $\overline\alpha$ is the mean of all those coefficients. So the last step is to simply calculate the mean of `TREAT_coefs`. Using the `mean()` function, calculate the mean of `TREAT_coefs` and save it as `avg_coef`. Then show `avg_coef`.
+```{r "3_5_5"}
+#< task
+#calculate the mean of 'TREAT_coefs' and save the result as 'avg_coef'. Then show `avg_coef`.
+
+#>
+avg_coef <- mean(TREAT_coefs)
+avg_coef
+#< hint
+display("The code will look like this:
+        avg_coef <- m**n(T***T_co***)
+        avg_coef")
+#>
+```
+
+There you go! The authors (causally) interpret this average coefficient $\overline\alpha$ of about $0.09$ as that households randomized into the treatment group had outcomes that were $0.09$ standard deviations higher (because we use z-scores) than households randomized into the control group in 2006 (Macours et al., 2012, p.260).
+
+For this value, one can now also calculate an **approximation** of the associated standard deviation. Since we used the "OLS"-method for computing our regressions, we will use the following formula, which can be used to estimate the variance of the mean of **uncorrelated** variables:
+  $$Var(\overline X) = \frac{\sigma^2}{n},$$
+  where 
+- $X_1,…,X_n$ are random variables. In our case, these are the $n=10$ coefficients for `TREAT` for the 10 different tests as dependent variables,
+- $σ^2$ is the mean variance of the variables.
+
+(If we would have used the "SUR"-method in our systemfit() estimation, we would need a different formula to estimate the variance of the mean. In this case we would need the formula of the variance of the mean for **correlated** variables, because in the "SUR"-method the coefficients of different equations would have a pairwise correlation that we would have to take into account. I have done the calculation of it in the Appendix to show both variants.)
+
+To calculate $\sigma^2$ we need the variance-covariance matrix of the coefficients. With the `systemfit` package we can easily access it by calling the value `coefCov` of our fitted model `fitsur`. Using this method, store the variance-covariance matrix of the coefficients in the variable `cov_matrix`, then show the dimension of it, using the `dim()` function (it returns a vector with the number of rows and the number of columns): 
+```{r "3_6_1"}
+#< task
+#Store the variance-covariance matrix of the coefficients in 'cov_matrix', then show the dim() of it.
+cov_matrix <- fitsur$coefCov
+#>
+dim(cov_matrix)
+#< hint
+display("Just show the dimension of 'cov_matrix' with the dim() function")
+#>
+```
+
+As you can see, this is a 340x340 matrix. Each column and row (in the same order) reflects a coefficient and its covariances with all other coefficients of the 10 regressions. (It sadly is too large to display here). On the diagonal we can therefore see the variances of the coefficients (meaning, the covariance "with itself"). Since we are only interested in the coefficients of `TREAT`, we again must change our matrix so that only these are contained. For that we can pass the vector `TREAT_names` from before to `cov_matrix` to select only those rows and columns that have the value TRUE and therefore contain a coefficient for `TREAT`. We will store it in `cov_matrix_TREAT`. Press *check* one more time to show the new variance-covariance matrix `cov_matrix_TREAT`:
+```{r "3_6_3"}
+#< task
+#press 'check' to select the TREAT coefficients in 'cov_matrix' and show 'cov_matrix_TREAT'
+cov_matrix_TREAT <- cov_matrix[TREAT_names, TREAT_names]
+cov_matrix_TREAT
+#>
+#< hint
+display("Just press 'check'.")
+#>
+```
+
+As you can see, now we are only considering the coefficients for `TREAT` and thus, we receive a 10x10 matrix for the 10 different tests. Here it also becomes clear that in the "OLS"-method there are no covariances with other coefficients and thus only the diagonal (which stores the variances) has values. All other entries are 0.
+
+Let's now continue with the calculation of $\sigma^2$. As a reminder, it is the mean variance of the variables. From this variance-covariance matrix we received, this figure is actually pretty easy to calculate. Remember, on the diagonal of the matrix we find the variances of the coefficients. Since we need to calculate the mean of those values, the first step is to select this diagonal and safe it as a vector. We use the `diag()` function, which can easily be applied to `cov_matrix_TREAT` for this cause. We will store the resulting vector in `vars`. As a next step, using the `mean()` function, calculate the mean of `vars` to get $\sigma^2$ and store it in `sigma_squared`. Then show `sigma_squared`:
+```{r "3_6_4"}
+#< fill_in
+# #fill in the right values in the placeholders to calculate the mean of 'vars' and store it in 'sigma_squared'. Then show sigma_squared. 
+# vars = diag(cov_matrix_TREAT)
+# sigma_squared = ___(___)
+#>
+vars = diag(cov_matrix_TREAT)
+sigma_squared = mean(vars)
+sigma_squared
+#< hint
+display("You have to use the mean() function to calculate the mean of 'vars'. Then you have to show sigma_squared by just typing its name in the code chunk.")
+#>
+```
+
+We receive a $\sigma^2$ of about $0.002$. Great, now we have estimated the necessary value to calculate the variance of the mean of our coefficients. As a reminder, this was the according formula $Var(\overline X) = \frac{\sigma^2}{n}$. Now we can just input this value in the formula and calculate the variance. Since we are interested in the standard deviation and not the variance, we also have to take the **square root** of our result. We do this with the `sqrt()` function. 
+Just press *check* to calculate the standard deviation with the formula, store it in `std_dev_of_mean` and show it:
+```{r "3_6_7"}
+#< task
+#press 'check' to estimate the standard deviation with the formula, store it in 'std_dev_of_mean' and show 'std_dev_of_mean'.
+
+#assigning a value for n
+n <- length(system)
+
+std_dev_of_mean <- sqrt(sigma_squared/n)
+std_dev_of_mean
+#>
+#< hint
+display("Just press 'check'.")
+#>
+```
+
+We receive a value of about $0.014$. This value is lower than the according one in the paper. As you learned earlier in this chapter, this is because the authors use clustered standard errors. Systemfit has no option to do this and it would have, again, taken a lot more time to implement. Therefore, our values are smaller. From the paper (Table 4) we can infer that the p-value for this mean coefficient effect size is below 0.01 and by that this value is significant at the 1%-level.
+
+As you just witnessed, the calculation of the average coefficient $\overline\alpha$ and its associated standard deviation takes quite a bit of work. To do this more quickly in the following exercises, I created a function. It is named `sur_TREAT` and takes a list of tests (dependant variables), a dataset and the right side of the formula (independant variables) as inputs. These 3 parameters must be passed in the following order: `sur_TREAT(list, dataset, right_side_formula)`. As an output it gives the mean of the `TREAT` coefficients and its according (approx.) standard deviation. You can look at the infoblock below to see how this function was created.
+#< info "Creating the function 'sur_TREAT'"
+In R you can create functions on your own with `function()`. Take a look at the following code chunk to see how I combined all the previous steps in one function:
+```{r "3_6_8", eval=TRUE}
+sur_TREAT <- function(list, dataset, right_side_formula){
+  #create 'system' and run the SUR
+  system = as.list(lapply(list, function(x){
+    as.formula(paste0(x, "~", right_side_formula))
+  }))
+  fitsur <- systemfit(system, method = "OLS", data=dataset)
+  
+  #estimate the mean coefficient of 'TREAT'
+  TREAT_names <- grepl("_TREAT", names(fitsur$coefficients))
+  TREAT_coefs <- fitsur$coefficients[TREAT_names]
+  avg_coef <- mean(TREAT_coefs)
+  
+  #estimate the according std. dev.
+  cov_matrix_TREAT <- fitsur$coefCov[TREAT_names, TREAT_names]
+  sigma_squared = mean(diag(cov_matrix_TREAT))
+  n <- length(system)
+  std_dev_of_mean <- sqrt((sigma_squared)/n)
+  
+  return(data.frame(coefficient = c(avg_coef), standard_dev = c(std_dev_of_mean)))
+}
+```
+#>
+
+Next, let us use this function to calculate the average coefficient of all tests in 2008. In this year there were 11 tests (one more for associative memory which wasn't included in 2006). So, first we create a vector `list_08` which contains all these 11 tests of 2008, just as we did for the year 2006 before. As a dataset we can again use `dat` and the right side of our regression also stays the same. We saved it earlier in the variable `right_side_formula`.
+Press *check* to use the function `sur_TREAT` on the 11 regressions from 2008 in order to calculate the mean of all `TREAT` coefficients and its standard deviation (this can again take some time:
+```{r "3_7"}
+#< task
+# Press 'check' to run the 11 regressions for 2008 and get the mean of all TREAT coefficients and its standard deviation:
+
+list_08 = c("z_tvip_08", "z_language_08", "z_memory_08", "z_martians_08", "z_social_08", "z_behavior_08", "z_grmotor_08", "z_finmotor_08", "z_legmotor_08", "z_height_08", "z_weight_08")
+
+sur_TREAT(list_08, dat, right_side_formula)
+#>
+#< hint
+display("Just press 'check' to run the code.")
+#>
+```
+
+The effect of about $0.077$ is a bit smaller than the one for 2006. The standard deviation of about $0.011$ is also somewhat smaller. Once again, this value is also significant at the 1% level (Table 4). In contrast to looking at the TVIP test individually, like we did before, it seems like that there are no major fade-out effects of the program, regarding all tests for cognitive development together. The difference between $0.09$ (2006) and $0.077$ (2008) is only marginal and both coefficients are significant. The authors also additionally divided the tests into *cognitive and socio-emotional outcomes* and *health and motor outcomes* and separately looked at their coefficients. In both years, the impact of the program on the cognitive and socio-emotional outcomes was greater. 
+
+Go to the next exercise to learn more about the **robustness** of our estimated coefficients.
+
+## Exercise 3.1 Robustness Checks
+
+To confirm our results from the last exercise, the paper now performs 3 **robustness checks**. One of them we will do ourselves and the other two I will just explain. Robustness checks are checking whether our results are robust to alternative assumptions and the possibility that one of our assumptions might not be true. We want to see how our regression coefficient estimates behave when the regression specification is modified by changing our sample or regressors. The 3 checks therefore represent 3 potential problems in our interpretation, which we want to check.
+
+## Caregiver-reported tests
+The first potential problem is, that the results for the *Denver* and the *BPI* tests are (partly) reported by the parents of the children. There is the theory that the parents of the treatment group were more likely to **over-report the development of their children** (submitting higher results than their children actually achieved) because they thought that this is what the program staff would like to hear. Answer the following quiz question:
+#< quiz "exercise3_1_2"
+question: If we assume that parents in the **treatment group** really did largely report their children's scores higher than they really were, what would be the **bias of our estimator $\overline\alpha$**?
+sc:
+    - The bias would be positive (our estimator would be overestimated)*
+    - The bias would be negative (our estimator would be underestimated)
+success: Correct! If the parents of the treatment group had falsified the results of their children upwards, then we would have estimated the effect of the treatment on cognitive development with a positive bias.
+failure: Unfortunately not correct! If the parents of the treatment group had falsified the results of their children upwards, then our estimator $\overline\alpha$ would also be falsified upwards.
+#>
+
+The regressions were run again **without the Denver and BPI tests** and the average coefficients were calculated for both years. They were similar to the coefficients from last exercise (and similar in significance). Removing the caregiver-reported tests did not have a substantive effect on our results from before and therefore it does not appear that our program effects are a result of systematic misreporting by parents.
+
+## Sample changes between 2006 and 2008
+One problem for comparing the 2006 and 2008 results is, that our sample has changed between these two dates. New children are **born into the sample** and since some tests cannot be taken at all ages, children can also **'age' into** tests that have a minimum age or **'age' out of** tests that have a maximum age, between 2006 and 2008. So we don't have test results for every test in 2006 or 2008 for all children and not every child has been treated for the same amount of time. In 2008 there was also an additional associative memory test, which did not exist in 2006. This could also be problematic when comparing the averages. 
+
+To see how all of this affects our results, we want to estimate our regressions now with a “restricted” sample of children who took tests in **both years**. For our average coefficient of 2008 we also want to exclude the associative memory test.
+
+First, we have to read in the dataset again and store it as `dat`. The variable `sample06` is a dummy variable that takes the value 1 if the child participated in at least one test in 2006. `sample08` is the equivalent variable for 2008. We want to filter our dataset to only contain children that were part of both samples, meaning they participated in at least one test in 2006 and 2008. Safe the new dataset as `dat_restricted`, then show the number of rows for `dat` and `dat_restricted`: 
+```{r "3_8"}
+#< hint
+display("You have to replace the placeholder in the code with the variable that is '1', if the child participated in at least one test in 2008. Look at the text again to see which variable it is.")
+#>
+#< fill_in
+# #Load cashtransfers.dta into the variable 'dat'
+# dat <- read_dta("cashtransfers.dta")
+
+# #fill in the right variable in the placeholder below, to filter the dataset to only contain children that were part of both samples, 2006 and 2008:
+# dat_restricted <- dat %>%
+#   filter((sample06 ==1) & (___==1))
+#
+# #showing the number of rows for our original dataset 'dat' and our new restricted dataset 'dat_restricted':
+# c(nrow(dat), nrow(dat_restricted))
+#>
+dat <- read_dta("cashtransfers.dta")
+
+dat_restricted <- dat %>%
+  filter((sample06 ==1) & (sample08==1))
+
+c(nrow(dat), nrow(dat_restricted))
+```
+
+As we can see, the restriction has reduced the size of our dataset by a not negligible size. So, quite some children were part of only one of the two samples.
+
+Let us now estimate the average coefficients for 2006 and 2008, using this restricted dataset. In contrast to the last exercise, we will use the same tests for 2006 and 2008 and won't observe the associative memory test, which only took place in 2008. Press *check* to run the 10 regressions of 2006 and 2008 using our `sur_TREAT()` function to show their average `TREAT` coefficients with associated standard deviations: (Be aware that this can take some time)
+```{r "3_9"}
+#< task
+# Press 'check' to run the 10 regressions for 2006 and 2008 and show the average coefficient + standard deviation for 2006 and 2008:
+
+# Creating lists of all tests of 2006 and 2008:
+list_06 <- c("z_tvip_06", "z_language_06", "z_memory_06", "z_social_06", "z_behavior_06", "z_grmotor_06", "z_finmotor_06", "z_legmotor_06", "z_height_06", "z_weight_06")
+
+list_08 <- c("z_tvip_08", "z_language_08", "z_memory_08", "z_social_08", "z_behavior_08", "z_grmotor_08", "z_finmotor_08", "z_legmotor_08", "z_height_08", "z_weight_08")
+
+right_side_formula <- "TREAT + age_transfer + male + s1age_head_05 + s1male_head_05 + ed_mom_inter + s1hhsize_05 + s1hhsz_undr5_05 + s1hhsz_5_14_05 + s1hhsz_15_24_05 + s1hhsz_25_64_05 + s1hhsz_65plus_05 + bweight_inter + bweight_inter + height_05_inter + weight_05_inter + tvip_05_inter + ed_mom_miss + bweight_miss + tvip_05_miss + height_05_miss + weight_05_miss + com_haz_05 + com_waz_05 + com_tvip_05 + com_control_05 + com_vit_05 + com_deworm_05 + com_notvip + MUN2 + MUN3 + MUN4 + MUN5 + MUN6"
+
+# Calculating and showing the means of the coefficients and their standard deviations for 2006 and 2008:
+sur_TREAT(list_06, dat_restricted, right_side_formula)
+
+sur_TREAT(list_08, dat_restricted, right_side_formula)
+#>
+#< hint
+display("Just press 'check' to run the code.")
+#>
+```
+
+The average coefficient of 2006 is now about $0.08$ and that of 2008 $0.06$. For comparison, in the last exercise (without the restricted dataset) the value of 2006 was ~$0.09$ and that of 2008 ~$0.077$. So the values are now both slightly smaller, but still very similar. Here too, it looks like the robustness check is passed and the paper also concludes that our estimator is not biased by a changing sample of children between 2006 and 2008. We can therefore compare the values of these two dates.
+
+## Changes in household formation
+The last potential problem again concerns the composition of our dataset. The household member who received the cash transfers is called "titular" in the paper. As said in the introduction of this problemset, in most cases, the titular is the mother of the child. However, there are also cases where the households split between 2006 and 2008, so the titular might no longer be living in the household of the child. It would be problematic if the treatment had an influence on this. The last robustness check restricts the sample to include only children that live with the same titular in 2006 and 2008.
+
+Again, these results are similar to those from the unrestricted dataset. This suggests that our estimated program effects are not primarily a result of any possible effect of the program on household formation.
+
+Finally, we can say that our estimators have withstood all robustness checks, which further confirms our interpretation that the program really did have an impact on cognitive development. Go on with the next exercise to learn more about on if this effect can be explained by the income effect of the transfer alone.
+
+## Exercise 3.2 Disaggregated Effects by Treatment Package
+
+In the last exercises we saw that the program had a significant effect on early childhood cognitive development that also withstood robustness checks. Now the question is, how the program actually causes this effect. In other words, whether it is really only the **income effect** of the transfer alone that explains this effect, or if other factors of the treatment also play a role.
+
+To find this out, we must first explain the three different treatment groups. It was not the case that all the households in the treatment group received the same amount of money. They have been divided into three groups with different levels of cash transfers:
+- Households in **Group 1** (also called "**basic treatment**") got a cash transfer (paid to the titular) every two months. If the household had children between 7 and 15 years old who had not finished primary school, it received an additional educational transfer, which was conditional on the school enrollment and attendance of those children. The transfers made to this group represented on average 15 percent of the per capita expenditures of the average recipient household in our sample (in the according year).
+- Households in **Group 2** (also called "**training package**") got cash transfers that were identical to the ones of Group 1. In addition, they were offered a scholarship that allowed 
+one household member to complete a vocational training course of their choice. They also participated in labor market and business-skill training workshops.
+- Households in **Group 3** (also called "**lump-sum payment package**") also got cash transfers that were identical to the ones of Group 1. In addition, they were offered a (conditional) lump-sum payment to start a small nonagricultural activity, paid out in 2006. The amount of the lump-sum payment represented approximately 11 percent of per capita expenditures of the average recipient household (in the according year). Together with the basic cash transfers, a household in Group 3 therefore was eligible for transfers equivalent to  ~26 percent of annual expenditures.
+
+The amount of grants per group is therefore as follows:
+
+**control-group** (no transfers) < **basic treatment** (basic cash transfers) < **training package** (basic cash transfers + free training courses) < **lump-sum payment package** (basic cash transfers + conditional lump-sum payment)
+
+We have about the same number of observations in our dataset for each of the four groups. The division of the treatment group into these 3 subgroups was also random. Table 1 in the paper shows that this randomization was also mostly successful. To distinguish the groups, there are the four variables `TREAT_control`, `TREAT_basic`, `TREAT_train` and `TREAT_lumpsum` in our dataset. `TREAT_control` is a dummy variable that has the value 1 if the child belongs to a household of the *control group*. `TREAT_basic` is the according treatment dummy variable for children of the *basic treatment*, `TREAT_train` for children of the *training package* and `TREAT_lumpsum` for children of the *lump-sum payment package*.
+
+As a reminder, we want to analyze, whether it is only the income effect of the transfers alone that explains the effect of the treatment on cognitive development, or if other factors of the treatment also play a role. To do this, we first want to find out whether households that receive cash transfers also have higher expenditures (and therefore consumption) than households from the control group. We also want to look at whether there are differences between the 3 treatment groups in terms of consumption.
+
+We will run regressions of the following form,
+$$log(PCC_{t}) = \alpha_1 T_{basic} + \alpha_2 T_{train} + \alpha_3 T_{lumpsum} + \beta X + \varepsilon, \quad\quad t =2006\quad or\quad 2008,$$
+where $log(PCC_{t})$ is the *logarithmised* per capita consumption of a household for year $t$. $T_{basic}$, $T_{train}$ and $T_{lumpsum}$ are the treatment dummy variables for the *basic treatment*, the *training package* and the *lump-sum payment package*. They have the value 1 if the child is from a household of the according treatment group (when they are all 0, the child is in the control group). $X$ is the same set of extended control variables from our last regressions (including the intercept), this time with an additional control variable for the *baseline log per capita consumption*. We will run this regression for 2006 and 2008, using the `lm_robust()` function with standard errors that are adjusted for clustering at the community level again. 
+
+Let's start with the year 2006 again. First, read in the dataset and store it as `dat`. The variable `cons_tot_pc_06` of our dataset stores the per capita consumption of the child's household in 2006 and with R's built in `log()` function, we can logarithmise it. Using the `lm_robust()` function, fill in the right values to regress the *logarithmised* variable `cons_tot_pc_06` on the 3 treatment dummy variables `TREAT_basic`, `TREAT_train`, `TREAT_lumpsum` and the extended set of control variables and store the fitted values in `reg_con06`. Then show the results of `reg_con06` with the `htmlreg()` function:
+```{r "3_10",results='asis'}
+#< hint
+display("You have to replace the first placeholder in the code to logarithmise the dependent variable 'cons_tot_pc_06'. Remember that R has a built in function 'log()' to do that. You have to replace the second and third placeholder with the according treatment dummy variables.")
+#>
+#< fill_in
+# #Loading the dataset.
+# dat <- read_dta("cashtransfers.dta")
+# #Just fill in the right values in the following 'lm_robust()' function
+
+# reg_con06 <- lm_robust(log(___) ~ TREAT_basic + ___ + ___ + log(cons_tot_pc_05) + age_transfer + male + s1age_head_05 + s1male_head_05 + ed_mom_inter + s1hhsize_05 + s1hhsz_undr5_05 + s1hhsz_5_14_05 + s1hhsz_15_24_05 + s1hhsz_25_64_05 + s1hhsz_65plus_05 + bweight_inter + bweight_inter + height_05_inter + weight_05_inter + tvip_05_inter + ed_mom_miss + bweight_miss + tvip_05_miss + height_05_miss + weight_05_miss + com_haz_05 + com_waz_05 + com_tvip_05 + com_control_05 + com_vit_05 + com_deworm_05 + com_notvip + MUN2 + MUN3 + MUN4 + MUN5 + MUN6,
+#   clusters = unique_05,
+#   se_type = 'stata',
+#   data = dat)
+
+# htmlreg(list(reg_con06),include.ci = FALSE, stars = c(0.001, 0.01, 0.05), doctype = FALSE, center = TRUE, caption = "Impact on Household-Level per capita Consumption", custom.model.names=c("2006"), caption.above=TRUE, custom.coef.map = list("(Intercept)"="(Intercept)", "TREAT_basic"="TREAT_basic", "TREAT_train"="TREAT_train", "TREAT_lumpsum"="TREAT_lumpsum"))
+#>
+dat <- read_dta("cashtransfers.dta")
+reg_con06 <- lm_robust(log(cons_tot_pc_06) ~ TREAT_basic + TREAT_train + TREAT_lumpsum + log(cons_tot_pc_05) + age_transfer + male + s1age_head_05 + s1male_head_05 + ed_mom_inter + s1hhsize_05 + s1hhsz_undr5_05 + s1hhsz_5_14_05 + s1hhsz_15_24_05 + s1hhsz_25_64_05 + s1hhsz_65plus_05 + bweight_inter + bweight_inter + height_05_inter + weight_05_inter + tvip_05_inter + ed_mom_miss + bweight_miss + tvip_05_miss + height_05_miss + weight_05_miss + com_haz_05 + com_waz_05 + com_tvip_05 + com_control_05 + com_vit_05 + com_deworm_05 + com_notvip + MUN2 + MUN3 + MUN4 + MUN5 + MUN6,
+   clusters = unique_05,
+   se_type = 'stata',
+   data = dat)
+
+htmlreg(list(reg_con06),include.ci = FALSE, stars = c(0.001, 0.01, 0.05), doctype = FALSE, center = TRUE, caption = "Impact on Household-Level per capita Consumption", custom.model.names=c("2006"), caption.above=TRUE, custom.coef.map = list("(Intercept)"="(Intercept)", "TREAT_basic"="TREAT_basic", "TREAT_train"="TREAT_train", "TREAT_lumpsum"="TREAT_lumpsum"))
+```
+
+We receive an estimator $\hat{\alpha_1}$ of ${\alpha_1}$ of about $0.28$, $\hat{\alpha_2}$ of about $0.30$ and $\hat{\alpha_3}$ of about $0.34$. Due to the logarithmised dependent variable, this figure is difficult to interpret. It basically means that the *basic treatment* (TREAT_basic) had an influence on per capita household consumption in 2006 of about 28 log points, the *training package* (TREAT_train) of about 30 log points and the *lump-sum payment package* (TREAT_lumpsum) of about 34 log points. All coefficients are highly significant and we can conclude that the treatment significantly increased the consumption of households in 2006. The differences of the coefficients between the treatment groups are relatively small. Nevertheless, they reflect what one would expect. Households from the *basic treatment* who only received the basic cash transfers have a smaller coefficient (i.e. smaller increase in logarithmised consumption) compared to households from the *training package* (that got additional training courses) and households from the *lump-sum payment package* (that optionally got an additional lump-sum payment). The latter ultimately had the biggest coefficient of the three, what can probably be explained by them investing the lump-sum payment.
+
+Now run the same regression for the year 2008. Use the according dependent variable `cons_tot_pc_08` and store the results in a new variable `reg_con08`. Then show the results together with `reg_con06` with the `htmlreg()` function from the `texreg` package. Just press *check* to show the regression results:
+```{r "3_11",results='asis'}
+#< hint
+display("Just press 'check' to run the regression and show the output together with 'reg_con_groups06'.")
+#>
+#< task
+reg_con08 <- lm_robust(log(cons_tot_pc_08) ~ TREAT_basic + TREAT_train + TREAT_lumpsum + log(cons_tot_pc_05) + age_transfer + male + s1age_head_05 + s1male_head_05 + ed_mom_inter + s1hhsize_05 + s1hhsz_undr5_05 + s1hhsz_5_14_05 + s1hhsz_15_24_05 + s1hhsz_25_64_05 + s1hhsz_65plus_05 + bweight_inter + bweight_inter + height_05_inter + weight_05_inter + tvip_05_inter + ed_mom_miss + bweight_miss + tvip_05_miss + height_05_miss + weight_05_miss + com_haz_05 + com_waz_05 + com_tvip_05 + com_control_05 + com_vit_05 + com_deworm_05 + com_notvip + MUN2 + MUN3 + MUN4 + MUN5 + MUN6,
+   clusters = unique_05,
+   se_type = 'stata',
+   data = dat)
+
+htmlreg(list(reg_con06, reg_con08),include.ci = FALSE, stars = c(0.001, 0.01, 0.05), doctype = FALSE, center = TRUE, caption = "Impact on Household-Level per capita Consumption", custom.model.names=c("2006","2008"), caption.above=TRUE, custom.coef.map = list("(Intercept)"="(Intercept)", "TREAT_basic"="TREAT_basic", "TREAT_train"="TREAT_train", "TREAT_lumpsum"="TREAT_lumpsum"))
+#>
+```
+
+In 2008 the coefficient for households from the *basic treatment* (TREAT_basic) is $0.00$ for the *training package* (TREAT_train) it is $0.05$ and for the *lump-sum payment package* it is $0.08$. Only the coefficient for the *lump-sum payment package* (TREAT_lumpsum) is significant now (at the 5%-level).
+
+We can therefore conclude that for each treatment group the effect has been greatly reduced compared to 2006. The treatment in general had a significant influence on the consumption, of which not much remained after the program. The per capita expenditures of households from the first 2 treatment groups somehow converges again with the control group, 2 years after the end of the cash transfers. The households from the *lump-sum payment package* still have per capita expenditures in 2008 that significantly differ from the control group. 
+
+The authors also performed a *t-test* to check if the coefficients of the *basic treatment* and the *lump-sum payment package* were different. The p-values of the test can be seen in Table 5. They conclude that the two groups significantly differ in both years, especially in 2008. In the following analysis, we will only deal with these two groups, since the differences are greatest here.
+
+Since we now know that households from the *lump-sum payment package* had significantly higher expenditures than ones from the *basic treatment* (in both years), we now want to compare their child **cognitive development outcomes**.
+
+We will run regressions of the following form:
+$$Y_{t} = \alpha_{1,t} T_{basic}+\alpha_{2,t} T_{lumpsum} + \beta_tX + \varepsilon_{t}, \quad\quad \quad\quad t =2006\quad or\quad 2008,$$
+where 
+- $Y_{t}$ is the z-score of the sum of all tests in the year $t$ (variable `z_all_06` resp. `z_all_08)`. (In the paper they estimate regressions for every test for every year individually but due to time constraints, we will not do this here. The findings that are of interest to us can also be seen with this method. )
+- $T_{basic}$ and $T_{lumpsum}$ are dummy variables which have the value one if the child is from a household of the *basic treatment* ($T_{basic}$) or the *lump-sum payment package* ($T_{lumpsum}$) group.
+- $X$ is our set of extended control variables, including the intercept and the variable `TREAT_train` for the training package (we have to keep it in our regression to get the correct results although we are only interested in the coefficients of `TREAT_basic` and `TREAT_lumpsum`.
+
+In the next chunk we run this regression for 2006 and 2008, using the `lm_robust()` function with standard errors that are adjusted for clustering at the community level again. We regress the variable `z_all_06` on the two treatment dummy variables, `TREAT_basic` and `TREAT_lumpsum`, and the extended set of control variables and store the fitted values in `reg_outcomes06`. We do the same for the outcome variable `z_all_08` of the year 2008 and store the results in `reg_outcomes08`. Then we show the results of `reg_outcomes06` and `reg_outcomes08` with the `htmlreg()` function. Just press *check* to show the results:
+```{r "3_12",results='asis'}
+#< hint
+display("Just press 'check' to run the two regressions and show their results.")
+#>
+#< task
+reg_outcomes06 <- lm_robust(z_all_06 ~ TREAT_basic + TREAT_lumpsum + age_transfer + male + TREAT_train + s1age_head_05 + s1male_head_05 + ed_mom_inter + s1hhsize_05 + s1hhsz_undr5_05 + s1hhsz_5_14_05 + s1hhsz_15_24_05 + s1hhsz_25_64_05 + s1hhsz_65plus_05 + bweight_inter + bweight_inter + height_05_inter + weight_05_inter + tvip_05_inter + ed_mom_miss + bweight_miss + tvip_05_miss + height_05_miss + weight_05_miss + com_haz_05 + com_waz_05 + com_tvip_05 + com_control_05 + com_vit_05 + com_deworm_05 + com_notvip + MUN2 + MUN3 + MUN4 + MUN5 + MUN6,
+   clusters = unique_05,
+   se_type = 'stata',
+   data = dat)
+
+reg_outcomes08 <- lm_robust(z_all_08 ~ TREAT_basic + TREAT_lumpsum + age_transfer + male + TREAT_train + s1age_head_05 + s1male_head_05 + ed_mom_inter + s1hhsize_05 + s1hhsz_undr5_05 + s1hhsz_5_14_05 + s1hhsz_15_24_05 + s1hhsz_25_64_05 + s1hhsz_65plus_05 + bweight_inter + bweight_inter + height_05_inter + weight_05_inter + tvip_05_inter + ed_mom_miss + bweight_miss + tvip_05_miss + height_05_miss + weight_05_miss + com_haz_05 + com_waz_05 + com_tvip_05 + com_control_05 + com_vit_05 + com_deworm_05 + com_notvip + MUN2 + MUN3 + MUN4 + MUN5 + MUN6,
+   clusters = unique_05,
+   se_type = 'stata',
+   data = dat)
+
+htmlreg(list(reg_outcomes06, reg_outcomes08),include.ci = FALSE, stars = c(0.001, 0.01, 0.05), doctype = FALSE, center = TRUE, caption = "Impact on child cognitive development", custom.model.names=c("2006","2008"), caption.above=TRUE, custom.coef.map = list("(Intercept)"="(Intercept)", "TREAT_basic"="TREAT_basic", "TREAT_lumpsum"="TREAT_lumpsum"))
+#>
+```
+
+Here we are only interested in the differences between the coefficients of the *basic treatment* (`TREAT_basic`) and the *lump-sum payment package* (`TREAT_lumpsum`). The estimate $\hat\alpha_{1,2006}$ for $\alpha_{1,2006}$ (coefficient of `TREAT_basic` in 2006) is about $0.06$, while $\hat\alpha_{2,2006}$ is at about $0.08$. For 2008, the estimates $\hat\alpha_{1,2008}$ and $\hat\alpha_{2,2008}$ are both about $0.09$. Thus, we can infer that in 2006 the differences between those two groups were a bit larger than in 2008, regarding their impact on cognitive development. Nevertheless, both groups still have very similar values and we would like to know if those differences are even significant. 
+
+In the next step, we will therefore look at if this is the case. We will estimate regressions of the following form:
+
+$$Y_{k} = \alpha_k T_{lumpsum} + \beta_kX + \varepsilon_{k}, \quad\quad k =1...K,$$
+where 
+- $Y_{k}$ is the *k-th* outcome, meaning the *k-th* test. We have 10 different tests in the first data collection in 2006 and 11 in the second in 2008. 
+- $T_{lumpsum}$ is a dummy variable which has the value of one if the child is from a household of the *lump-sum payment package*
+- $X$ is our set of extended control variables, including the intercept.
+
+Here, we will calculate the mean $\overline\alpha = \frac{1}{K}\sum_{k=1}^K\hat{\alpha}_k$ for all tests of 2006 or 2008. The speciality here is, that we only want to compare the two groups *basic treatment* and *lump-sum payment package*. Thus, we first have to restrict our data set so that it *only contains children from households of one of the two groups*. This makes the *basic treatment* group the baseline in our regression (and not the control group, like in all regressions before).
+
+Use the `filter()` function from the `dplyr` package to filter our dataset `dat` to only contain children which have `TREAT_basic==1` **or** (symbolized in R through "|") `TREAT_lumpsum==1` and save the new dataset as `dat_group`. Then show the number of rows for `dat` and `dat_group`.
+```{r "3_14"}
+#< hint
+display("You have to replace the placeholders in the code sample by the right values.")
+#>
+#< fill_in
+# #fill in the right values in the placeholders in the following code sample. Then show the number of rows for 'dat' and 'dat_group'.
+#
+# dat_group <- ___ %>% 
+#    ___(TREAT_basic ==1 | ___ ==1)
+#
+# c(nrow(dat), nrow(dat_group))
+#>
+dat_group <- dat %>% 
+  filter(TREAT_basic ==1 | TREAT_lumpsum ==1)
+c(nrow(dat), nrow(dat_group))
+```
+
+As we can see, approximately half of the children in the dataset belong to households of one of the two groups. Next, we want to run our regressions on this dataset. We will start with the 2006 test results and use our function `sur_TREAT` in the same way as in exercise 3.
+
+First, we need define to the vector `list_06` of all 10 tests of 2006 again. We also need to specify the right side of our regressions. Be aware that we use `TREAT_lumpsum` and the extended set of controls this time. We will store it in `right_side_formula` again. Then we use `sur_TREAT` to estimate the mean coefficient of `TREAT_lumpsum` and its appr. standard deviation, using the just created `dat_group` dataset.
+Click *check* on the following chunk to run the 10 regressions and show the results:
+```{r "3_15"}
+#< task
+# Press 'check' to estimate the mean coefficient of 'TREAT_lumpsum' in 2006 and its standard deviation:
+
+list_06 <- c("z_tvip_06", "z_language_06", "z_memory_06", "z_social_06", "z_behavior_06", "z_grmotor_06", "z_finmotor_06", "z_legmotor_06", "z_height_06", "z_weight_06")
+
+right_side_formula <- "TREAT_lumpsum + age_transfer + male + s1age_head_05 + s1male_head_05 + ed_mom_inter + s1hhsize_05 + s1hhsz_undr5_05 + s1hhsz_5_14_05 + s1hhsz_15_24_05 + s1hhsz_25_64_05 + s1hhsz_65plus_05 + bweight_inter + bweight_inter + height_05_inter + weight_05_inter + tvip_05_inter + ed_mom_miss + bweight_miss + tvip_05_miss + height_05_miss + weight_05_miss + com_haz_05 + com_waz_05 + com_tvip_05 + com_control_05 + com_vit_05 + com_deworm_05 + com_notvip + MUN2 + MUN3 + MUN4 + MUN5 + MUN6" 
+  
+sur_TREAT(list_06, dat_group, right_side_formula)
+#>
+#< hint
+display("Just press 'check' to run the code.")
+#>
+```
+
+We receive an estmator of about $0.011$. Children from households randomized into the *lump-sum payment package* group therefore had outcomes that were (on average) 0.01 standard deviations higher than children from households randomized into the *basic treatment* group in 2006. This value is very small and from the paper (Table 6) we can also infer that the p-value for this effect size is above 0.1 and therefore this value is not significantly different from 0.
+
+Now we want to estimate the average coefficient for 2008. We will therefore define a vector `list_08` of all 11 tests of 2008 and repeat the estimation of the 11 regressions, as above. Click *check* on the following chunk to use `sur_TREAT` to estimate the mean coefficient of `TREAT_lumpsum` and its standard deviation for the year 2008:
+```{r "3_16"}
+#< task
+# Press 'check' to estimate the mean coefficient of 'TREAT_lumpsum' in 2008 and its standard deviation:
+
+list_08 <- c("z_tvip_08", "z_language_08", "z_memory_08", "z_martians_08", "z_social_08", "z_behavior_08", "z_grmotor_08", "z_finmotor_08", "z_legmotor_08", "z_height_08", "z_weight_08")
+
+sur_TREAT(list_08, dat_group, right_side_formula)
+#>
+#< hint
+display("Just press 'check' to run the code.")
+#>
+```
+
+This time we receive an even smaller value of about $-0.005$, which is very close to zero. We can also see again from Table 6 that this coefficient is not significant.
+
+So, to summarize these results: In both years we have significantly higher expenditure levels in households that received the *lump-sum payment* (relative to those that only received the *basic treatment*) but no evidence of better child development outcomes. This suggests that the treatment effects on child development that we observe **can't fully be explained by the income effect of the cash transfer itself**. Something other than (or in addition to) the money is probably responsible for the effects. 
+
+The paper now goes on and addresses the problem that the two groups not only differ in the amount of cash transfers, but that the households from the *lump-sum payment package* group are also expected to **start a small business**. One concern is that starting a small business may itself have an effect on child development, most likely a negative one, since having a business means a lot of stress and work for the parents. If this is the case, the lump-sum payment is not a clean measure of the possible effects of the additional cash. In Table 7 the paper compares the economic activity of mothers, maternal mental health, and the home environment between households from the *basic treatment* and the *lump-sum payment package*. It comes to the conclusion that there is no evidence that the *lump-sum payment package* had an negative effect on the mental health of mothers or on the amount (or quality) of time that mothers spent with their children. Thus, the absence of better child development outcomes for households of the *lump-sum payment package* group, in spite of the higher transfers they received and the higher overall levels of expenditures, cannot easily be explained by other changes that could have had a negative effect on child development.
+
+Since we now know that it is not only the income effect of the cash transfer that explains the effect on cognitive development, the paper goes on and analyzes the program effects on a number of so called “risk factors”. Those are "expenditures on food, availability of micronutrients, inadequate 
+stimulation, exposure to infectious disease and caregivers’ mental health" (Macours et al., 2012, p.266). All of them could be important determinants of child development.
+
+The authors found that the program had substantial effects on the use of various inputs such as the composition of food (meaning a lower fraction on staples and higher fractions on animal proteins, fruits and vegetables), expenditures, child stimulation (meaning they were more likely to tell stories, sing to, or read to their children, and to have pen, paper, and toys for children in the house) and vitamin/medicine intake. You can see this in the first and second columns of Table 8 in the paper. The third column also controls for the log of total per capita expenditures and its square. This controlling for the higher total expenditures of the treatment group only had a modest effect on the estimated coefficients. Therefore, it does (again) not seem that the change of the mentioned inputs in the treatment group can easily be explained by their higher expenditure levels alone. Additionally, in the last column they also ran regressions for only the basic treatment. Remember, households from this group did not have higher expenditures than those in the control group in 2008. Nevertheless, we can refer from the table that these households continue to show significant differences in the use of the mentioned inputs. These results suggest that the program had an **effect on the behavior and habits of the treated households**, and that some of these behavioral changes were still apparent two years after the program had been discontinued.
+
+## Exercise 4 Conclusion
+
+Let us briefly repeat what we have done and learned in this problem set in which we tried to assess the impact of a randomized cash transfer program on early childhood cognitive development in rural Nicaragua. We started with a descriptive overview in which we became familiar with the structure and characteristics of the given dataset. In the next exercise we graphically analyzed some test results and their development between 2006 and 2008. We also started to differentiate between treatment and control group. Here we were able to witness for the first time that the treatment group achieved (long-lasting) better test results. We were also confronted with the problem that our data set only contains data from 2 points in time. Hence, we could not use difference-in-difference estimation to measure the causal effect of the program. In the next chapter, we learned through a relatively theoretical approach what a causal interpretation actually is and when it can be made. We have subsequently seen that randomization of the treatment can also be used to interpret effects causally. The crucial assumption here is that the treatment randomization must have been successful. We continued to check this in the following, using our dataset. We came to the conclusion that, for the majority of variables, there is no significant difference between the treatment groups. However, there are also exceptions that showed a p-value of less than 0.01 (1%), which indicates that the randomization of the program wasn't quite optimal and we have to be careful with interpreting our effects as causal.
+
+In the next exercise we then empirically estimated the effect of the cash transfer program. We ran some OLS regressions and distinguished between outcomes for 2006 and 2008. At first we ran regressions with only a few control variables and then with a larger, extended set of control variables. For all tests, we obtained an average coefficient of the treatment in 2006 of about 0.09 (regarding regressions with the extended set of variables). This value is significant at the 1%-level and we interpreted it causally as that the randomized treatment led to outcomes that were on average 0.09 standard deviations higher (because we use z-scores) than outcomes from households randomized into the control group in 2006. For 2008 we received an average coefficient of about 0.08, which is therefore a bit smaller. The magnitude of the impact we estimate is described by the authors as "modest, but not trivial" (Macours et al., 2012, p.270). It is also interesting to see, that it seems like that there are no significant fade-out effects in the test results, regarding that in 2008 the cash transfers had stopped for about 2 years but the effect of the treatment is still about as high as in 2006. In the next exercise, we subjected these results to 3 robustness checks. The first one evaluated if our estimator is biased because parents of the treatment group submitted test results (for tests that are reported by caregivers) that were too high because they thought that this is what the program staff would like to hear. Removing these caregiver-reported tests from our regressions had no influence on our coefficients. The next check addressed the problem that the two data collections 2006 and 2008 did not contain test results for the same children because new children are born into the sample and children can also age into or out of tests that have age restrictions. Restricting our dataset to only contain children who took tests in both years also did not have a mentionable influence on our coefficients. The last check concerned the potential problem that the treatment has an influence on household formation. Restricting our dataset to include only children that live with the same titular in 2006 and 2008 also had no influence on our coefficients and therefore we concluded that our estimators are robust to all 3 checks.
+
+At this point it was clear to us that the treatment somehow had an effect on cognitive development. So we moved on and analyzed whether it is the income effect of the cash transfers that explains this effect, or if other factors of the treatment also play a role. We learned that the treatment was divided into 3 different treatment groups, which differed in the amount of transfers. First, we investigated whether the different treatments in general had an influence on the household per capita consumption. We found that households randomly assigned to any treatment (significantly) increased their expenditures in 2006. In 2008 only the lump-sum payment group had significantly higher expenditures. We have also found out that, between the treatment groups, higher transfers are associated with higher increases in consumption in both years. As a result, we now knew that households from the lump-sum payment package had significantly higher expenditures than ones from the basic treatment (in both years). Next, we compared their child cognitive development outcomes by running regressions for every test again. For both years, we saw that the lump-sum payment package did not have significantly better test results than the basic treatment group. Since we had significantly higher expenditure levels in households that received the lump-sum payment (relative to those that only received the basic treatment) in both years but no evidence of better child development outcomes, we therefore concluded that the treatment effects on child development can not fully be explained by the income effect of the cash transfers and that probably other factors like behavioral changes had more influence on the success of the treatment.
+
+To collect your last award, press *edit* and *check* one last time.
+```{r "4_1_7"}
+#< task
+#Press check to collect your last award!
+#>
+```
+#< award "You've done it!"
+Congratulation! You just finished this problem set. I hope you learned something about the effectiveness of cash transfer programs in terms of child cognitive development. I also hope that you were able to require some knowledge about randomized experiments and gained some R programming skills. If you want to solve more problem sets, have a look at <a href="https://github.com/skranz/RTutor" target="_blank">RTutor on Github</a>. 
+#>
+
+## Exercise 5 Appendix
+
+In the following I will show you how you can estimate an approximation for the variance of the mean of **correlated** variables. I will demonstrate it with the example of the 2006 cognitive development tests with the extended set of control variables (exercise 3). 
+This time, we consider a model estimated by `systemfit` using the "SUR"-method. In contrast to the OLS-method, this method doesn't only run separate regressions. Here, the **error terms are assumed to be correlated across the equations**. This is actually the more conventional form of seemingly unrelated regressions. So let's start by creating the model. First, we have to load all the prerequisites that are necessary to fit our `systemfit` model. We will then store the fitted model in `fitsur`. (In this appendix, you don't have to do anything on your own. Just press *check* for each task). Be aware that running `systemfit` with the "SUR"-method can take quite some time.
+```{r "4_1"}
+#< task
+dat <- read_dta("cashtransfers.dta")
+
+list_06 <- c("z_tvip_06", "z_language_06", "z_memory_06", "z_social_06", "z_behavior_06", "z_grmotor_06", "z_finmotor_06", "z_legmotor_06", "z_height_06", "z_weight_06")
+
+right_side_formula <- "TREAT + age_transfer + male + s1age_head_05 + s1male_head_05 + ed_mom_inter + s1hhsize_05 + s1hhsz_undr5_05 + s1hhsz_5_14_05 + s1hhsz_15_24_05 + s1hhsz_25_64_05 + s1hhsz_65plus_05 + bweight_inter + bweight_inter + height_05_inter + weight_05_inter + tvip_05_inter + ed_mom_miss + bweight_miss + tvip_05_miss + height_05_miss + weight_05_miss + com_haz_05 + com_waz_05 + com_tvip_05 + com_control_05 + com_vit_05 + com_deworm_05 + com_notvip + MUN2 + MUN3 + MUN4 + MUN5 + MUN6"
+
+#creating the list 'system', which contains all formulas:
+system = as.list(lapply(list_06, function(x){
+  as.formula(paste0(x, "~", right_side_formula))
+}))
+
+fitsur <- systemfit(system, method = "SUR", data=dat)
+#>
+```
+
+We will not calculate the average coefficient of TREAT as in exercise 3, since the calculation does not differ from the one we used while working with the "OLS"-method. The results do differ, but that is not important for us here.
+
+We will only do the calculation of the **approximation** of the associated standard deviation here. For this, we will now use a different formula as before. The following one can be used to estimate the variance of the mean of **correlated** variables:
+  $$Var(\overline X) = \frac{\sigma^2}{n}+\frac{n-1}{n}\rho \sigma^2,$$
+  where 
+- $X_1,…,X_n$ are random variables. In our case, these are the $n=10$ coefficients for `TREAT` for the 10 different tests as dependent variables,
+- $σ^2$ is the mean variance of the variables,
+- $\rho>0$ is the average pairwise correlation of these variables.
+
+As you can see, the first part of the formula has remained the same. Only $\frac{n-1}{n}\rho \sigma^2$ has been added at the end. To calculate $\rho$ and $\sigma^2$ we need the variance-covariance matrix of the coefficients. We will access it by calling the value `coefCov` of our fitted model `fitsur`. Using this method, we store it in the variable `cov_matrix`. After that, we will create the vector `TREAT_names` and pass it to `cov_matrix` to select only those rows and columns that contain a coefficient for `TREAT`, as we did in more detail in exercise 3. We will store it in `cov_matrix_TREAT`. Press *check* to show it.
+```{r "3_6_1"}
+#< task
+#Storing the variance-covariance matrix of the coefficients in 'cov_matrix'
+cov_matrix <- fitsur$coefCov
+
+#Creating the vector 'TREAT_names'
+var_names <- rownames(cov_matrix)
+TREAT_names <- grepl("_TREAT", var_names)
+
+#Selecting all the TREAT coefficients in cov_matrix
+cov_matrix_TREAT <- cov_matrix[TREAT_names, TREAT_names]
+cov_matrix_TREAT
+#>
+```
+
+Again, we receive a 10x10 variance-covariance matrix of the TREAT coefficients. The big difference now is, that the coefficients actually have covariances with other coefficients and we do not only have values for the diagonal.
+
+Let's now start with the calculation of $\sigma^2$. As a reminder, it is the mean variance of the variables. On the diagonal of the matrix we find the variances of the coefficients. Since we need to calculate the mean of those values, we will first apply the `diag()` function to `cov_matrix_TREAT`. We will store the resulting vector in `vars`, calculate its mean to get $\sigma^2$ and store it in `sigma_squared`. Then we show `sigma_squared`.
+```{r "3_6_4"}
+#< task
+# Calculate the mean of 'vars' and store it in 'sigma_squared'. Then show sigma_squared. 
+vars = diag(cov_matrix_TREAT)
+sigma_squared = mean(vars)
+sigma_squared
+#>
+```
+
+We receive a value of about $0.002$. Next, we also have to calculate $\rho$. As a reminder, it is the average pairwise correlation of the `TREAT` coefficients. Since we only have the variance-covariance matrix of the coefficients, we first have to transform it into a correlation matrix. This can be done with the `cov2cor()` function. Apply this function to `cov_matrix_TREAT` and store the resulting correlation matrix in `corr`. Then show `corr`:
+```{r "3_6_5"}
+#< task
+# Transform 'cov_matrix_TREAT' into a correlation matrix and store it in 'corr'. Then show 'corr'. 
+corr <- cov2cor(cov_matrix_TREAT)
+corr
+#>
+```
+
+As you can see, the values on the diagonal are all 1, since this is the correlation a variable has with itself. As we are only interested in the *pairwise* correlations between those coefficients, we first need to "delete" this diagonal. We do this by accessing it with the `diag()` function and assigning the value `NA` to it. Thereby, all the values on the diagonal are changed to `NA`. After that, we only have the values left that we are interested in and we can go on and take the average of this matrix. But we still have to pay attention to one minor detail. We have to set the parameter `na.rm` of `mean()` to TRUE in order to indicate that `NA` values should be removed before the computation. We will store the value in the variable `rho`. Just press *check* to run the steps described above:
+```{r "3_6_6"}
+#< task_notest
+# Assign NA values to the diagonal of 'corr', estimate the mean of 'corr', store it in 'rho' and show 'rho'.
+diag(corr) = NA
+rho <- mean(corr, na.rm=TRUE)
+rho
+#>
+```
+
+Great, now we have estimated all the necessary values to calculate the variance of the mean of our coefficients. As a reminder, this was the according formula $Var(\overline X) = \frac{\sigma^2}{n}+\frac{n-1}{n}\rho \sigma^2$. Now we can just input our values in this formula and calculate the variance. Since we are interested in the standard deviation and not the variance, we will take the square root of our result with the `sqrt()` function. Just press *check* to calculate the standard deviation with the formula, store it in `std_dev_of_mean` and show it:
+```{r "3_6_7"}
+#< task
+# Estimate the standard deviation with the formula, store it in 'std_dev_of_mean' and show 'std_dev_of_mean'.
+
+#assigning a value for n
+n <- length(system)
+
+std_dev_of_mean <- sqrt((sigma_squared)/n) + ((n-1)/n)*rho*(sigma_squared)
+std_dev_of_mean
+#>
+#< hint
+display("Just press 'check'.")
+#>
+```
+
+We receive a value of about $0.014$. It is just a bit smaller than the one we received at the estimation with the "OLS"-method.
+
+## Exercise 6 References
+
+### Bibliography
+
+Cameron, A.C. and Miller, D.L. (2015): “A Practitioner’s Guide to Cluster-Robust Inference”, Journal of Human Resources, 50(2): 317-372.
+
+Shadish, W.R. et al. (2002): “EXPERIMENTAL AND QUASI-EXPERIMENTAL DESIGNS FOR GENERALIZED CAUSAL INFERENCE”, Houghton Mifflin.
+
+Macours, K. et al. (2012): "Cash Transfers, Behavioral Changes, and Cognitive Development in Early Childhood: Evidence from a Randomized Experiment", American Economic Journal: Applied Economics, 4(2): 247–273.
+
+Macours, K. et al. (2012b): "Cash Transfers, Behavioral Changes, and Cognitive Development in Early Childhood: Evidence from a Randomized Experiment", American Economic Journal: Applied Economics, 4(2): 247–273, "readme.pdf".
+
+Macours, K. et al. (2012c): "Online appendix for: Cash Transfers, Behavioral Changes, and Cognitive Development in Early Childhood: Evidence from a Randomized Experiment", American Economic Journal: Applied Economics.
+
+Roberts, M. (2013): "Robust and Clustered Standard Errors", Projects at Harvard.
+
+Roth, J. et al. (2022): "What’s Trending in Difference-in-Differences? A Synthesis of the Recent Econometrics Literature", Cornell University.
+
+Athey, S. and Imbens, G.W. (2017): "Chapter 3 - The Econometrics of Randomized Experiments", Handbook of Economic Field Experiments, Volume 1: 73-140.
+
+Hill, R.C. et al. (2011): "Principles of Econometrics", John Wiley & Sons, Inc., Hoboken.
+
+Kennedy, P. (2008): "A guide to econometrics 6th edition", Wiley-Blackwell, Malden.
+
+Wooldridge, J.M. (2013): "Introductory Econometrics. A Modern Approach 5th Edition", South-Western CENGAGE Learning, Mason.
+
+Currie, J. and Duncan T. (2001): “Early Test Scores, School Quality and SES: Longrun 
+Effects on Wage and Employment Outcomes”, Polachek, S. (Ed.), Worker Wellbeing in a Changing Labor Market (Research in Labor Economics, Vol. 20), Emerald Group Publishing Limited, Bingley, pp. 103-132.
+
+Case, A. and Paxson, C. (2008): “Stature and Status: Height, Ability, and Labor Market Outcomes”, Journal of Political Economy, 116(3): 499–532.
+
+Babyak, M.A. (2009): "Understanding confounding and mediation", Evidence-Based Mental Health Notebook, Volume 12(3): 68-71.
+
+Dugard, P. (2014): "Randomization tests: A new gold standard?", Journal of Contextual Behavioral Science, Volume 3(1): 65-68,
+
+### R and Packages in R
+
+Blair, G. et al. (2022), estimatr. "Fast Estimators for Design-Based Inference", R package version 1.0.0, https://cran.r-project.org/web/packages/estimatr/index.html
+
+Garcia-Urquieta, I. (2022), RCT. "Assign Treatments, Power Calculations, Balances, Impact Evaluation of Experiments", R package version 1.1.2, https://cran.r-project.org/web/packages/RCT/index.html
+
+Henningsen, A. and Hamann, J.D. (2022), systemfit. "Estimating Systems of Simultaneous Equations", R package version 1.1-28, https://cran.r-project.org/web/packages/systemfit/index.html
+
+Iannone, R. (2022), DiagrammeR. "Graph/Network Visualization", R package version 1.0.9, https://cran.r-project.org/web/packages/DiagrammeR/index.html
+
+Leifeld, P. et al. (2022), texreg. "Conversion of R Regression Output to LaTeX or HTML Tables", R package version 1.38.6, https://cran.r-project.org/web/packages/texreg/index.html
+
+Wickham, H. et al. (2022), dplyr. "A Grammar of Data Manipulation", R package version 1.0.9, https://cran.r-project.org/web/packages/dplyr/index.html
+
+Wickham, H. et al. (2022b), ggplot2. "Create Elegant Data Visualisations Using the Grammar of Graphics", R package version 3.3.6 https://cran.r-project.org/web/packages/ggplot2/index.html
+
+Wickham, H. et al. (2022c), haven. "Import and Export 'SPSS', 'Stata' and 'SAS' Files", R package version 2.5.0, https://cran.r-project.org/web/packages/haven/index.html
+
+Wickham, H. (2022d), tidyverse. "Easily Install and Load the 'Tidyverse'", R package version 1.3.2, https://cran.r-project.org/web/packages/tidyverse/index.html
+
+Zhu, H. et al. (2021), kableExtra. "Construct Complex Table with 'kable' and Pipe Syntax", R package version 1.3.4, https://cran.r-project.org/web/packages/kableExtra/index.html
+

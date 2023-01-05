@@ -1,0 +1,12 @@
+Package: RTutorCashTransfersAndCognitiveDevelopment
+Type: Package
+Title: RTutor problem set CashTransfersAndCognitiveDevelopment
+Version: 0.1
+Date: 2023-05-01
+Author: Luis Fiegl
+Maintainer: Luis Fiegl <luis.fiegl@uni-ulm.de>
+Description: RTutor problem set CashTransfersAndCognitiveDevelopment
+License:
+	Problem set content: Creative Commons (CC BY-NC 4.0)
+	Package code: GPL >= 2.0
+Depends: RTutor, ggplot2, haven, tidyverse, DiagrammeR, estimatr, texreg, RCT, kableExtra, systemfit
